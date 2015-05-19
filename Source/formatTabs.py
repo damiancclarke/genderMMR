@@ -98,3 +98,31 @@ for v in ['MMR','tb','ln_LE_ratio']:
     rightT.write('\\end{landscape}')
     rightT.close()
     cc = cc+1
+
+#==============================================================================
+#== (3) Edit GII table
+#==============================================================================
+for v in ['MMR','tb','ln_LE_ratio']:
+    GII = RES + 'gii/'+v+'GII.tex' 
+
+    giiT = open(TAB +v+ 'GII.tex', 'w')
+    mG   = open(GII, 'r').readlines()
+
+    for i,line in enumerate(mG):
+        if i<8:
+            giiT.write(line)
+        if i==8:
+            giiT.write('\\multicolumn{9}{l}{'
+                       '\\textsc{Panel A: No Interaction}}\\\\\n')
+        if i>7 and i<12:
+            giiT.write(line)
+        if i>12 and i<15:
+            giiT.write(line)
+        if i==15:
+            giiT.write('\\\\ \\multicolumn{9}{l}{'
+                       '\\textsc{Panel B: GDP Interaction}}\\\\\n')
+        if i>25:
+            giiT.write(line)
+
+giiT.close()
+print 'end'

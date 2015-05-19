@@ -188,9 +188,84 @@ foreach y of varlist tb ln_LE_ratio {
     }
 }
 
+*-------------------------------------------------------------------------------
+*--- (5a) Regressions of MMR on parliament
+*-------------------------------------------------------------------------------
+gen democ_gdp5  = democ_5*lgdp_5
+gen womparlGDP5 = womparl_5*lgdp_5
+gen womparlGDP  = womparl*lgdp
+
+lab var womparl_5   "Female Representation"
+lab var womparl     "Female Representation"
+lab var democ_gdp5  "Democracy $\times$ ln(GDP)"
+lab var democ_gdp   "Democracy $\times$ ln(GDP)"
+lab var womparlGDP  "Female Rep $\times$ ln(GDP)"
+lab var womparlGDP5 "Female Rep $\times$ ln(GDP)"
+lab var democ_5     "Democracy Indicator"
+lab var democ       "Democracy Indicator"
+
+qui areg MMR womparl_5 lgdp_5 democ_5 womparlGDP5 democ_gdp  _Y*, `ab' `se'
+local cn if e(sample)
+local opts `cn', `ab' `se'
+
+eststo: areg MMR womparl_5 lgdp_5                                     `opts'
+eststo: areg MMR womparl_5 lgdp_5                                 _Y* `opts'
+eststo: areg MMR womparl_5 lgdp_5 democ_5                         _Y* `opts'
+eststo: areg MMR womparl_5 lgdp_5         womparlGDP5             _Y* `opts'
+eststo: areg MMR womparl_5 lgdp_5 democ_5 womparlGDP5             _Y* `opts'
+eststo: areg MMR womparl_5 lgdp_5 democ_5 womparlGDP5 democ_gdp5  _Y* `opts'
+    
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/rights/MMR-WP.tex",
+replace `estopt' title("MMR and Women's Representation in Parliament")
+cells(b(star fmt(%-9.2f)) se(fmt(%-9.2f) par([ ]) )) mlabels(, depvar)
+keep(womparl_5 lgdp_5 democ_5 womparlGDP5 democ_gdp5) style(tex) booktabs 
+postfoot("\bottomrule\multicolumn{7}{p{14.6cm}}{\begin{footnotesize} "
+         "\textsc{Notes:} Country and year FE always included. MMR and "
+         "political representation data comes from the WDI. The estimation"
+         "sample consist of 40 countries for whom the parliamentary "
+         "representation variable is available between 1997 and 2011."
+         "Standard errors are clustered by "
+         "country.\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+estimates clear
 
 *-------------------------------------------------------------------------------
-*--- (5a) Gender intensity of language with MMR
+*--- (5b) Regressions of LE, TB on participation
+*-------------------------------------------------------------------------------
+foreach y of varlist tb ln_LE_ratio {
+    local Yn "Life Expectancy Ratio"
+    local f 2
+    if `"`y'"'=="tb" local Yn "TB"
+    if `"`y'"'=="tb" local f 3    
+
+    qui areg `y' womparl lgdp democ womparlGDP democ_gdp  _Y*, `ab' `se'
+    local cn if e(sample)
+    
+    eststo: areg `y' womparl lgdp                                 `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp                             _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp democ                       _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp       womparlGDP            _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp democ womparlGDP            _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp democ womparlGDP democ_gdp  _Y* `cn',`ab'`se'
+    
+    #delimit ;
+    esttab est1 est2 est3 est4 est5 est6 using "$OUT/rights/`y'-WP.tex",
+    replace `estopt' title("`Yn' and Women's Representation in Parliament")
+    cells(b(star fmt(%-9.`f'f)) se(fmt(%-9.`f'f) par([ ]) )) mlabels(, depvar)
+    keep(womparl lgdp democ womparlGDP democ_gdp) style(tex) booktabs 
+    postfoot("\bottomrule\multicolumn{7}{p{14.6cm}}{\begin{footnotesize} "
+             "\textsc{Notes:} Country and year FE are always included. `Yn' "
+             "and political representation data comes from the WDI database."
+             "Standard errors are clustered by "
+             "country.\end{footnotesize}}\end{tabular}\end{table}");
+    #delimit cr
+    estimates clear
+}
+
+
+*-------------------------------------------------------------------------------
+*--- (6a) Gender intensity of language with MMR
 *-------------------------------------------------------------------------------
 encode continent      , gen(cont)
 encode wb_income_group, gen(wbig)
@@ -245,7 +320,7 @@ postfoot("\bottomrule\multicolumn{9}{p{21.6cm}}{\begin{footnotesize} "
 estimates clear
 
 *-------------------------------------------------------------------------------
-*--- (5b) Gender intensity of language with LE, TB
+*--- (6b) Gender intensity of language with LE, TB
 *-------------------------------------------------------------------------------
 local xvars percentage lgdp lpop i.decade i.cont i.wbig pprotest pcatholic /*
 */          pmuslim kgatrstr
@@ -253,7 +328,7 @@ local xvars percentage lgdp lpop i.decade i.cont i.wbig pprotest pcatholic /*
 foreach y of varlist ln_LE_ratio tb {
 
     local Yn "Life Expectancy Ratio"
-    local note "the log of the ratio of female to male LE times 100,000 before 1990"
+    local note "the log of the ratio of female to male LE times 100,000"
     local f 1
     if `"`y'"'=="tb" {
         local Yn "TB"

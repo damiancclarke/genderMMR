@@ -6,10 +6,6 @@ specific health outcomes and stocks.
 
 The file is completely controlled by the globals and locals in section (1).
 
->> Change note to table
->> Change title to table
->> Change format of outcomes
->> Change x var for non 5-year outcomes
 */
 
 vers 11
@@ -31,8 +27,6 @@ local estopt stats (r2 N, fmt(%9.2f %9.0g) label(R-squared Observations))   /*
 
 local ab abs(cncode)
 local se cluster(cncode)
-
-
 
 
 *-------------------------------------------------------------------------------
@@ -260,9 +254,11 @@ foreach y of varlist ln_LE_ratio tb {
 
     local Yn "Life Expectancy Ratio"
     local note "the log of the ratio of female to male LE times 100,000 before 1990"
+    local f 1
     if `"`y'"'=="tb" {
         local Yn "TB"
         local note "TB infection rates (per 100,000) from the WDI database"
+        local f 3
     }
 
     foreach var of varlist NGII SBII GPII GAII GII0 GII1 GII2 GTroiano {
@@ -284,12 +280,12 @@ foreach y of varlist ln_LE_ratio tb {
     esttab NGII SBII GPII GAII GII0 GII1 GII2 GTroiano
     using "$OUT/gii/`y'GII.tex", keep(GII lgdp) style(tex) booktabs 
     replace `estopt' title("`Yn' and Gender Intensity of Language Measures")
-    cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles;
+    cells(b(star fmt(%-9.`f'f)) se(fmt(%-9.`f'f) par([ ]) )) mtitles;
 
     esttab NGIIint SBIIint GPIIint GAIIint GII0int GII1int GII2int GTroianoint
     using "$OUT/gii/`y'GII.tex", keep(GII GIIxGDP lgdp) style(tex) booktabs 
     append `estopt' title("`Yn' and Gender Intensity of Language Measures")
-    cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles
+    cells(b(star fmt(%-9.`f'f)) se(fmt(%-9.`f'f) par([ ]) )) mtitles
     postfoot("\bottomrule\multicolumn{9}{p{21.6cm}}{\begin{footnotesize} "
          "\textsc{Notes:} In each case the dependent variable is `note'. "
          " The GII measures are defined by "
@@ -301,5 +297,6 @@ foreach y of varlist ln_LE_ratio tb {
          "of the country that is tropical or subtropical, and the percent of "
          "speakers of the majority language. Standard errors are clustered by "
          "country.\end{footnotesize}}\end{tabular}\end{table}");
-#delimit cr
-estimates clear
+    #delimit cr
+    estimates clear
+}

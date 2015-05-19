@@ -29,6 +29,9 @@ log using "$LOG/panelEstimates.txt", text replace
 local estopt stats (r2 N, fmt(%9.2f %9.0g) label(R-squared Observations))   /*
 */           starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
 
+local ab abs(cncode)
+local se cluster(cncode)
+
 
 
 
@@ -60,9 +63,6 @@ lab var ln_LE_ratio "LE ratio"
 *-------------------------------------------------------------------------------
 foreach y of varlist tb ln_LE_ratio MMR {
     if `"`y'"'=="MMR" local 5 _5
-
-    local ab abs(cncode)
-    local se cluster(cncode)
 
     eststo:  reg `y' DSR`5'                                       ,      `se'
     eststo: areg `y' DSR`5' _Y*                                   , `ab' `se'
@@ -98,11 +98,11 @@ foreach y of varlist tb ln_LE_ratio MMR {
     }
 
     #delimit ;
-    esttab est1 est2 est3 est4 est5 using "$OUT/`y'-DSR.tex",
+    esttab est1 est2 est3 est4 est5 using "$OUT/dsr/`y'-DSR.tex",
     replace `estopt' title("`Yn' and Desired Sex Ratio (boys/girls)")
     cells(b(star fmt(%-9.`f'f)) se(fmt(%-9.`f'f) par([ ]) )) 
     keep(_cons DSR* lgdp* DSR_gdp*) style(tex) booktabs mlabels(, depvar)
-    postfoot("\midrule Country FE &&Y&Y&Y&Y\\ Year FE&&Y&Y&Y&Y\\ "
+    postfoot(" Country FE &&Y&Y&Y&Y\\ Year FE&&Y&Y&Y&Y\\ "
              "Desired Fertility&&&&Y&Y\\"
              "\bottomrule\multicolumn{6}{p{`mes'cm}}{\begin{footnotesize} "
              "\textsc{Notes:} DSR (desired sex ratio of boys/girls) is "
@@ -116,4 +116,79 @@ foreach y of varlist tb ln_LE_ratio MMR {
              "\end{footnotesize}}\end{tabular}\end{table}");
     #delimit cr
     estimates clear
+}
+
+*-------------------------------------------------------------------------------
+*--- (4a) Regressions of MMR on rights
+*-------------------------------------------------------------------------------
+gen democ_gdp = democ_5*lgdp_5
+local ct 
+
+lab var wopol_5 "Political Rights"
+lab var wecon_5 "Economic Rights"
+lab var wosoc_5 "Social Rights"
+
+foreach rt of varlist wopol_5 wecon_5 wosoc_5 {
+    cap gen `rt'GDP = `rt'*lgdp_5
+    qui areg MMR `rt' lgdp_5 democ_5 `rt'GDP democ_gdp  _Y*, `ab' `se'
+    local cn if e(sample)
+    
+    eststo: areg MMR `rt' lgdp_5                                `cn',`ab'`se'
+    eststo: areg MMR `rt' lgdp_5                            _Y* `cn',`ab'`se'
+    eststo: areg MMR `rt' lgdp_5 democ_5                    _Y* `cn',`ab'`se'
+    eststo: areg MMR `rt' lgdp_5         `rt'GDP            _Y* `cn',`ab'`se'
+    eststo: areg MMR `rt' lgdp_5 democ_5 `rt'GDP            _Y* `cn',`ab'`se'
+    eststo: areg MMR `rt' lgdp_5 democ_5 `rt'GDP democ_gdp  _Y* `cn',`ab'`se'
+    
+    #delimit ;
+    esttab est1 est2 est3 est4 est5 est6 using "$OUT/rights/MMR-`rt'.tex",
+    replace `estopt' title("MMR and Women's Rights")
+    cells(b(star fmt(%-9.2f)) se(fmt(%-9.2f) par([ ]) )) 
+    keep(`rt') style(tex) booktabs mlabels(, depvar)
+    postfoot("\midrule Year FE&&Y&Y&Y&Y&Y\\ Democracy controls &&&Y&&Y&Y\\ "
+             "Rights$\times$ GDP &&&&Y&Y&Y\\ Democracy$\times$ GDP &&&&&&Y\\"
+             "\bottomrule\end{tabular}\end{table}");
+    #delimit cr
+    estimates clear
+}
+
+*-------------------------------------------------------------------------------
+*--- (4b) Regressions of LE, TB on rights
+*-------------------------------------------------------------------------------
+drop democ_gdp
+gen democ_gdp = democ*lgdp
+local ct 
+
+replace ln_LE_ratio =ln_LE_ratio*100000
+lab var wopol "Political Rights"
+lab var wecon "Economic Rights"
+lab var wosoc "Social Rights"
+
+foreach y of varlist tb ln_LE_ratio {
+    local Yn "TB"
+    local Yn "Life Expectancy Ratio"
+    foreach rt of varlist wopol wecon wosoc {
+        cap drop `rt'GDP
+        gen `rt'GDP = `rt'*lgdp
+        qui areg `y' `rt' lgdp democ `rt'GDP democ  _Y*, `ab' `se'
+        local cn if e(sample)
+    
+        eststo: areg `y' `rt' lgdp                              `cn',`ab'`se'
+        eststo: areg `y' `rt' lgdp                          _Y* `cn',`ab'`se'
+        eststo: areg `y' `rt' lgdp democ                    _Y* `cn',`ab'`se'
+        eststo: areg `y' `rt' lgdp       `rt'GDP            _Y* `cn',`ab'`se'
+        eststo: areg `y' `rt' lgdp democ `rt'GDP            _Y* `cn',`ab'`se'
+        eststo: areg `y' `rt' lgdp democ `rt'GDP democ_gdp  _Y* `cn',`ab'`se'
+    
+        #delimit ;
+        esttab est1 est2 est3 est4 est5 est6 using "$OUT/rights/`y'-`rt'.tex",
+        replace `estopt' title("`Yn' and Women's Rights")
+        cells(b(star fmt(%-9.2f)) se(fmt(%-9.2f) par([ ]) )) 
+        keep(`rt') style(tex) booktabs mlabels(, depvar)
+        postfoot("\midrule Year FE&&Y&Y&Y&Y&Y\\ Democracy controls &&&Y&&Y&Y\\ "
+                 "Rights$\times$ GDP &&&&Y&Y&Y\\ Democracy$\times$ GDP &&&&&&Y\\"
+                 "\bottomrule\end{tabular}\end{table}");
+        #delimit cr
+        estimates clear
+    }
 }

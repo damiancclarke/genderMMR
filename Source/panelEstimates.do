@@ -165,8 +165,9 @@ lab var wecon "Economic Rights"
 lab var wosoc "Social Rights"
 
 foreach y of varlist tb ln_LE_ratio {
-    local Yn "TB"
     local Yn "Life Expectancy Ratio"
+    if `"`y'"'=="tb" local Yn "TB"
+    
     foreach rt of varlist wopol wecon wosoc {
         cap drop `rt'GDP
         gen `rt'GDP = `rt'*lgdp
@@ -192,3 +193,113 @@ foreach y of varlist tb ln_LE_ratio {
         estimates clear
     }
 }
+
+
+*-------------------------------------------------------------------------------
+*--- (5a) Gender intensity of language with MMR
+*-------------------------------------------------------------------------------
+encode continent      , gen(cont)
+encode wb_income_group, gen(wbig)
+local xvars percentage lgdp_5 lpop_5 i.decade i.cont i.wbig pprotest pcatholic /*
+*/          pmuslim kgatrstr
+
+gen SBII = sbii
+gen NGII = ngii
+gen GPII = gpii
+gen GAII = gaii
+gen GII0 = gii0
+gen GII1 = gii1
+gen GII2 = gii2
+gen GTroiano = gt_pronoun
+
+foreach var of varlist NGII SBII GPII GAII GII0 GII1 GII2 GTroiano {
+    cap drop GII GIIxGDP
+    gen GII = `var'
+    gen GIIxGDP = GII*lgdp_5
+    lab var GII     "Gender Intensity Index"
+    lab var GIIxGDP "GII $\times$ ln(GDP)"
+    
+    reg MMR GII `xvars', `se'
+    estimates store `var'
+
+    reg MMR GII GIIxGDP `xvars', `se'
+    estimates store `var'int
+}
+
+#delimit ;
+esttab NGII SBII GPII GAII GII0 GII1 GII2 GTroiano
+using "$OUT/gii/MMRGII.tex", keep(GII lgdp_5) style(tex) booktabs 
+replace `estopt' title("MMR and Gender Intensity of Language Measures")
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles;
+
+esttab NGIIint SBIIint GPIIint GAIIint GII0int GII1int GII2int GTroianoint
+using "$OUT/gii/MMRGII.tex", keep(GII GIIxGDP lgdp_5) style(tex) booktabs 
+append `estopt' title("MMR and Gender Intensity of Language Measures")
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles
+postfoot("\bottomrule\multicolumn{9}{p{21.6cm}}{\begin{footnotesize} "
+         "\textsc{Notes:} In each case the dependent variable is maternal "
+         "deaths per 100,000 live births. The GII measures are defined by "
+         "Gay et al (2013) and Givati and Troiano (2012).  Particular measures"
+         " of the GII are indicated in column headings and described in "
+         "section X.X.  Controls are the log of population, dummies for the "
+         "World Bank Income groups classification, the percentage of "
+         "population that is Protestant, Catholic and Muslim, the proportion "
+         "of the country that is tropical or subtropical, and the percent of "
+         "speakers of the majority language. Standard errors are clustered by "
+         "country.\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+estimates clear
+
+*-------------------------------------------------------------------------------
+*--- (5b) Gender intensity of language with LE, TB
+*-------------------------------------------------------------------------------
+local xvars percentage lgdp lpop i.decade i.cont i.wbig pprotest pcatholic /*
+*/          pmuslim kgatrstr
+
+foreach y of varlist ln_LE_ratio tb {
+
+    local Yn "Life Expectancy Ratio"
+    local note "the log of the ratio of female to male LE times 100,000 before 1990"
+    if `"`y'"'=="tb" {
+        local Yn "TB"
+        local note "TB infection rates (per 100,000) from the WDI database"
+    }
+
+    foreach var of varlist NGII SBII GPII GAII GII0 GII1 GII2 GTroiano {
+        cap drop GII GIIxGDP
+        
+        gen GII = `var'
+        gen GIIxGDP = GII*lgdp
+        lab var GII     "Gender Intensity Index"
+        lab var GIIxGDP "GII $\times$ ln(GDP)"
+    
+        reg `y' GII `xvars', `se'
+        estimates store `var'
+
+        reg `y' GII GIIxGDP `xvars', `se'
+        estimates store `var'int    
+    }
+
+    #delimit ;
+    esttab NGII SBII GPII GAII GII0 GII1 GII2 GTroiano
+    using "$OUT/gii/`y'GII.tex", keep(GII lgdp) style(tex) booktabs 
+    replace `estopt' title("`Yn' and Gender Intensity of Language Measures")
+    cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles;
+
+    esttab NGIIint SBIIint GPIIint GAIIint GII0int GII1int GII2int GTroianoint
+    using "$OUT/gii/`y'GII.tex", keep(GII GIIxGDP lgdp) style(tex) booktabs 
+    append `estopt' title("`Yn' and Gender Intensity of Language Measures")
+    cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles
+    postfoot("\bottomrule\multicolumn{9}{p{21.6cm}}{\begin{footnotesize} "
+         "\textsc{Notes:} In each case the dependent variable is `note'. "
+         " The GII measures are defined by "
+         "Gay et al (2013) and Givati and Troiano (2012).  Particular measures"
+         " of the GII are indicated in column headings and described in "
+         "section X.X.  Controls are the log of population, dummies for the "
+         "World Bank Income groups classification, the percentage of "
+         "population that is Protestant, Catholic and Muslim, the proportion "
+         "of the country that is tropical or subtropical, and the percent of "
+         "speakers of the majority language. Standard errors are clustered by "
+         "country.\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+estimates clear

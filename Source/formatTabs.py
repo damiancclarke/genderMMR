@@ -19,10 +19,6 @@ print('\n\n Producing tex files for output tables.\n\n')
 RES   = "/home/damiancclarke/investigacion/2013/WorldMMR/Results/"
 TAB   = "/home/damiancclarke/investigacion/2013/WorldMMR/tables/"
 
-polRight = RES + 'rights/MMR-wopol_5.tex' 
-ecoRight = RES + 'rights/MMR-wecon_5.tex' 
-socRight = RES + 'rights/MMR-wosoc_5.tex' 
-
 
 #==============================================================================
 #== (1b) shortcuts
@@ -35,52 +31,70 @@ tr   = '\\toprule'
 br   = '\\bottomrule'
 mc1  = '\\multicolumn{'
 mc2  = '}}'
-twid = ['7','5']
-tcm  = ['}{p{15.8cm}}','}{p{12.0cm}}']
+twid = ['7','7', '7']
+tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}']
 mc3  = '{\\begin{footnotesize}\\textsc{Notes:} '
 lname = "Fertility$\\times$desire"
 tname = "Twin$\\times$desire"
 tsc  = '\\textsc{' 
 ebr  = '}'
 R2   = 'R$^2$'
+n1   = ['MMR is from WDI, and is defined as deaths per 100,000 live births',
+        'TB is from WDI and is the incidence of tuberculosis per 100,000 people.'
+        ,'LE ratio is the log of the ratio of female to male LE times 100,000']
+n2   = ['All values are quinquennial averages for 160 countries.',
+        'TB data is available yearly from 1990-2012 for almost all countries',
+        'The estimation sample consists of 150 countries for years 1981-2012.']
 
 #==============================================================================
 #== (2) Generate rights table
 #==============================================================================
-rightT = open(TAB + 'rightsMMR.tex', 'w')
-rightT.write('\\begin{landscape}')
+cc = 0
+for v in ['MMR','tb','ln_LE_ratio']:
 
-pR = open(polRight, 'r').readlines()
-for i, line in enumerate(pR):
-    if i==8:
-        rightT.write('\n \\textsc{Panel A: Political Rights}&&&&&\\\\ \n')
-    if i==10:
+    if v=='MMR':
+        polRight = RES + 'rights/'+v+'-wopol_5.tex' 
+        ecoRight = RES + 'rights/'+v+'-wecon_5.tex' 
+        socRight = RES + 'rights/'+v+'-wosoc_5.tex' 
+    else:
+        polRight = RES + 'rights/'+v+'-wopol.tex' 
+        ecoRight = RES + 'rights/'+v+'-wecon.tex' 
+        socRight = RES + 'rights/'+v+'-wosoc.tex' 
+
+    rightT = open(TAB + 'rights'+v+'.tex', 'w')
+    rightT.write('\\begin{landscape}')
+
+    pR = open(polRight, 'r').readlines()
+    for i, line in enumerate(pR):
+        if i==8:
+            rightT.write('\n \\textsc{Panel A: Political Rights}&&&&&\\\\ \n')
+        if i==10:
+            line = line.replace('\\midrule', '')
+        if i<13:
+            rightT.write(line)
+    rightT.write('\n &&&&&& \\\\\n \\textsc{Panel B: Economic Rights}&&&&&\\\\ \n')
+
+    eR = open(ecoRight, 'r').readlines()
+    for i, line in enumerate(eR):
         line = line.replace('\\midrule', '')
-    if i<13:
-        rightT.write(line)
-rightT.write('\n &&&&&& \\\\\n \\textsc{Panel B: Economic Rights}&&&&&\\\\ \n')
+        if i>6 and i<13:
+            rightT.write(line)
+    rightT.write('\n &&&&&& \\\\\n \\textsc{Panel C: Social Rights}&&&&&\\\\ \n')
 
-eR = open(ecoRight, 'r').readlines()
-for i, line in enumerate(eR):
-    line = line.replace('\\midrule', '')
-    if i>6 and i<13:
-        rightT.write(line)
-rightT.write('\n &&&&&& \\\\\n \\textsc{Panel C: Social Rights}&&&&&\\\\ \n')
+    sR = open(socRight, 'r').readlines()
+    for i, line in enumerate(sR):
+        line = line.replace('\\midrule', '')
+        line = line.replace('Year', '\\midrule Year')
+        if i>6 and i<15:
+            rightT.write(line)
 
-sR = open(socRight, 'r').readlines()
-for i, line in enumerate(sR):
-    line = line.replace('\\midrule', '')
-    line = line.replace('Year', '\\midrule Year')
-    if i>6 and i<15:
-        rightT.write(line)
+    rightT.write('\n'+mr+mc1+twid[cc]+tcm[cc]+mc3+
+    "Country fixed effects are included in all cases."  
+    +n1[cc]+ 
+    "The rights data comes from the Cingranelli, Richards, and Clay data set. "
+    +n2[cc]+ 
+    "\\end{footnotesize}} \\\\ \\bottomrule \n \\end{tabular}\\end{table}")
 
-rightT.write('\n'+mr+mc1+twid[0]+tcm[0]+mc3+
-"Country fixed effects are included in all cases.  MMR is from WDI, and is "
-"defined as deaths per 100,000 live births.  The rights data comes from the "
-"Cingranelli, Richards, and Clay data set. All the are quinquennial averages." 
-" The estimation sample consists of 160 countries for the years 1990, 1995, "
-"2000, 2005 and 2010 (panel C does not contain the year 2010)."
-"\\end{footnotesize}} \\\\ \\bottomrule \n \\end{tabular}\\end{table}")
-
-rightT.write('\\end{landscape}')
-rightT.close()
+    rightT.write('\\end{landscape}')
+    rightT.close()
+    cc = cc+1

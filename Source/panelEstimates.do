@@ -40,6 +40,11 @@ gen DSR_5     = dsr1_15_25_5
 gen DSR       = dsr1_15_25
 gen DSR_gdp   = DSR*lgdp
 gen DSR_gdp_5 = DSR_5*lgdp_5
+gen abortion  = withoutrestrictions
+
+gen abortionLeg     =  1 if progressive == year
+replace abortionLeg = -1 if regressive==year
+replace abortionLeg =  0 if abortion != . & abortionLeg == .
 
 lab var DSR         "Desired Sex Ratio"
 lab var DSR_5       "Desired Sex Ratio"
@@ -50,12 +55,13 @@ lab var lgdp        "ln(GDP)"
 lab var MMR         "MMR \ \"
 lab var tb          "TB"
 lab var ln_LE_ratio "LE ratio"
+lab var abortion    "Unrestricted Abortion"
 
 
 *-------------------------------------------------------------------------------
 *--- (3) Regressions of MMR, LE advantage on DSR 
 *-------------------------------------------------------------------------------
-foreach y of varlist tb ln_LE_ratio MMR {
+foreach y of varlist tb ln_LE_ratio MMR abortion abortionLeg {
     if `"`y'"'=="MMR" local 5 _5
 
     eststo:  reg `y' DSR`5'                                       ,      `se'
@@ -90,6 +96,8 @@ foreach y of varlist tb ln_LE_ratio MMR {
         local f  3
         local mes 14.8
     }
+    if `"`y'"'=="abortion" local Yn Abortion
+    if `"`y'"'=="abortion" local Yn "Abortion legislation changed"
 
     #delimit ;
     esttab est1 est2 est3 est4 est5 using "$OUT/dsr/`y'-DSR.tex",
@@ -147,7 +155,7 @@ foreach rt of varlist wopol_5 wecon_5 wosoc_5 {
 }
 
 *-------------------------------------------------------------------------------
-*--- (4b) Regressions of LE, TB on rights
+*--- (4b) Regressions of LE, TB, abortion on rights
 *-------------------------------------------------------------------------------
 drop democ_gdp
 gen democ_gdp = democ*lgdp
@@ -158,9 +166,11 @@ lab var wopol "Political Rights"
 lab var wecon "Economic Rights"
 lab var wosoc "Social Rights"
 
-foreach y of varlist tb ln_LE_ratio {
+foreach y of varlist tb ln_LE_ratio abortion abortionLeg {
     local Yn "Life Expectancy Ratio"
     if `"`y'"'=="tb" local Yn "TB"
+    if `"`y'"'=="abortion" local Yn "Abortion"
+    if `"`y'"'=="abortionLeg" local Yn "Abortion legislation changed"
     
     foreach rt of varlist wopol wecon wosoc {
         cap drop `rt'GDP
@@ -231,13 +241,15 @@ postfoot("\bottomrule\multicolumn{7}{p{14.6cm}}{\begin{footnotesize} "
 estimates clear
 
 *-------------------------------------------------------------------------------
-*--- (5b) Regressions of LE, TB on participation
+*--- (5b) Regressions of LE, TB, abortion on participation
 *-------------------------------------------------------------------------------
-foreach y of varlist tb ln_LE_ratio {
+foreach y of varlist tb ln_LE_ratio abortion abortionLeg {
     local Yn "Life Expectancy Ratio"
-    local f 2
+    local f 3
+    if `"`y'"'=="ln_LE_ratio" local f 2
     if `"`y'"'=="tb" local Yn "TB"
-    if `"`y'"'=="tb" local f 3    
+    if `"`y'"'=="abortion" local Yn "Abortion"
+    if `"`y'"'=="abortionLeg" local Yn "Abortion legislation changed"
 
     qui areg `y' womparl lgdp democ womparlGDP democ_gdp  _Y*, `ab' `se'
     local cn if e(sample)
@@ -320,12 +332,12 @@ postfoot("\bottomrule\multicolumn{9}{p{21.6cm}}{\begin{footnotesize} "
 estimates clear
 
 *-------------------------------------------------------------------------------
-*--- (6b) Gender intensity of language with LE, TB
+*--- (6b) Gender intensity of language with LE, TB, abortion
 *-------------------------------------------------------------------------------
 local xvars percentage lgdp lpop i.decade i.cont i.wbig pprotest pcatholic /*
 */          pmuslim kgatrstr
 
-foreach y of varlist ln_LE_ratio tb {
+foreach y of varlist ln_LE_ratio tb abortion abortionLeg {
 
     local Yn "Life Expectancy Ratio"
     local note "the log of the ratio of female to male LE times 100,000"
@@ -335,7 +347,17 @@ foreach y of varlist ln_LE_ratio tb {
         local note "TB infection rates (per 100,000) from the WDI database"
         local f 3
     }
-
+    if `"`y'"'=="aborton" {
+        local Yn "Abortion"
+        local note "Abortion allowed in unrestricted circumstances"
+        local f 3
+    }
+    if `"`y'"'=="abortonLeg" {
+        local Yn "Abortion legislation changed"
+        local note "Abortion legislation changed"
+        local f 3
+    }
+    
     foreach var of varlist NGII SBII GPII GAII GII0 GII1 GII2 GTroiano {
         cap drop GII GIIxGDP
         

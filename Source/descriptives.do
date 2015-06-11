@@ -32,10 +32,14 @@ local se cluster(cncode)
 use "$DAT/LangGender_dataset"
 drop if not_country
 
-gen DSR_5     = dsr1_15_25_5
-gen DSR       = dsr1_15_25
-gen DSR_gdp   = DSR*lgdp
-gen DSR_gdp_5 = DSR_5*lgdp_5
+gen DSR_5      = dsr1_15_25_5
+gen DSR        = dsr1_15_25
+gen DSR_gdp    = DSR*lgdp
+gen DSR_gdp_5  = DSR_5*lgdp_5
+gen pReform    = progressive == year if withoutrestriction != .
+gen nReform    = regressive == year if withoutrestriction != .
+replace pReform = pReform*100
+replace nReform = nReform*100
 
 lab var DSR         "Desired Sex Ratio"
 lab var DSR_5       "Desired Sex Ratio"
@@ -46,12 +50,15 @@ lab var lgdp        "ln(GDP)"
 lab var MMR         "MMR \ \"
 lab var tb          "TB"
 lab var ln_LE_ratio "LE ratio"
+lab var pReform     "Progressive Abortion Reform$\times$100"
+lab var nReform     "Regressive Abortion Reform$\times$100"
+
 
 *-------------------------------------------------------------------------------
 *--- (3) Summary stats
 *-------------------------------------------------------------------------------
 local health MMR MMR_b_DHS100_5 le_male le_female ln_LE_ratio lgdp tb
-local gender wecon wopol wosoc gii0 womparl withoutrestrictions DSR
+local gender wecon wopol wosoc gii0 womparl withoutrestrictions *Reform DSR
 
 
 lab var MMR            "MMR (Deaths per 100,000 live births)"

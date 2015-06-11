@@ -1,6 +1,9 @@
 %-------------------------------------------------------------------------------
 \documentclass[11pt]{article}
 
+\usepackage{amsmath} 
+\usepackage{amsfonts}
+\usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage[usenames, dvipsnames]{color} 
 \usepackage{dsfont}
@@ -11,15 +14,16 @@
 \usepackage{lscape}
 \usepackage{natbib}
 \usepackage{setspace}
+\usepackage{subfig}
 
 
 \bibpunct{(}{)}{;}{a}{,}{,}
 
-\setlength\topmargin{-0.375in}
-\setlength\textheight{8.8in}
-\setlength\textwidth{5.8in}
-\setlength\oddsidemargin{0.4in}
-\setlength\evensidemargin{-0.5in}
+\setlength{\oddsidemargin}{0 in}
+\setlength{\evensidemargin}{0 in}
+\setlength{\textwidth}{6.3 in}
+\setlength{\textheight}{8.6 in}
+\setlength{\topmargin}{-.6in}
 \setlength\parindent{0.25in}
 \setlength\parskip{0.25in}
 
@@ -33,42 +37,34 @@
 
 %-------------------------------------------------------------------------------
 
-\title{{\bf\Large{\textsl{Maternal Mortality and Female Life Expectancy: }\\ 
-\large\normalsize The Importance of Gender Inequality}} \footnotemark[7] 
-\author{Sonia Bhalotra\\ \normalsize{University of Essex}\footnotemark[1] 
-\and Damian Clarke\\ \normalsize{University of Oxford}\footnotemark[2]\\ 
-\and Joseph Gomes\\ \normalsize{University of Essex}\footnotemark[3]\\\\ 
-\and Atheendar Venkataramani\\ \normalsize{Massachusetts General Hospital}\footnotemark[4]\\}}
-
-\date{\today}
-\renewcommand{\thefootnote}{\fnsymbol{footnote}}
-
-\footnotetext[1]{\noindent ISER \& Department of Economics, University of Essex, 
-Wivenhoe Park, Colchster CO4 3SQ, United Kingdom, \texttt{e-mail: srbhal@essex.ac.uk}}
-
-
-\footnotetext[2]{Department of Economics, University of Oxford, United Kingdom 
-\texttt{ e-mail:damian.clarke@economics.ox.ac.uk}}
-
-\footnotetext[3]{\noindent ISER, University of Essex, Wivenhoe Park, Colchster 
-CO4 3SQ, United Kingdom, \texttt{ e-mail:jgomes@essex.ac.uk}}
-
-\footnotetext[4]{Masachusstes General Hospital, USA 
-\texttt{ e-mail:avenkataramani@partners.org} \\ \vspace{0.1cm} } 
-
-\footnotetext[7]{We are grateful to all seminar participants in the FRG seminar 
-at ISER, Essex, NEUDC 2014 conference in Boston University,  Growth Conference 
-in ISI Delhi Dec 2014, and RES 2015 in Manchester, for their comments and 
-feedback.}
-
 
 %-------------------------------------------------------------------------------
-
-
-
-
-
 \begin{document}
+
+\title{{\bf\Large{\textsl{Maternal Mortality and Female Life Expectancy: }\\ \large\normalsize The Importance of Gender Inequality}} \footnotemark[7] 
+\author{Sonia Bhalotra\\ \normalsize{University of Essex}\footnotemark[1] \and Damian Clarke\\ \normalsize{University of Oxford}\footnotemark[2]\\ \and Joseph Gomes\\ \normalsize{University of Essex}\footnotemark[3]\\\\ \and Atheendar Venkataramani\\ \normalsize{Massachusetts General Hospital}\footnotemark[4]\\}}
+
+\date{\today}
+
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}} % makes footnotes as symbols
+
+\footnotetext[1]{\noindent ISER \& Department of Economics, University of Essex, Wivenhoe Park, Colchster CO4 3SQ, United Kingdom, \texttt{ e-mail: 
+\href{mailto:srbhal@essex.ac.uk}{srbhal@essex.ac.uk}}}
+
+
+\footnotetext[2]{Department of Economics, University of Oxford, UK \texttt{ e-mail:
+\href{mailto: damian.clarke@economics.ox.ac.uk}{ damian.clarke@economics.ox.ac.uk}}}
+
+\footnotetext[3]{\noindent ISER, University of Essex, Wivenhoe Park, Colchster CO4 3SQ, United Kingdom, \texttt{ e-mail: 
+\href{mailto:jgomes@essex.ac.uk}{jgomes@essex.ac.uk}}}
+
+\footnotetext[4]{Masachusstes General Hospital, USA \texttt{ e-mail: 
+\href{mailto:avenkataramani@partners.org}{avenkataramani@partners.org}}\\ \vspace{0.5cm}}
+
+\footnotetext[7]{We are grateful to all seminar participants in the FRG seminar at ISER, Essex, NEUDC 2014 conference in Boston University,  Growth Conference in ISI Delhi Dec 2014, and RES 2015 in Manchester, for their comments and feedback.}
+
+
 \thispagestyle{empty}
 \maketitle
 \renewcommand{\thefootnote}{\arabic{footnote}} \setcounter{footnote}{0} 
@@ -78,8 +74,8 @@ feedback.}
 \begin{abstract}
 Societies with higher levels of gender inequality are slower and less likely to
 address women-specific health outcomes.  We demonstrate this by examining 
-maternal mortality ratios (MMR) and the life expectancy gap which exists between
-women and men.  We show that socities which are more gender predjudiced 
+maternal mortality ratios (MMR) and the gap between women's and men's life 
+expectancy.  We show that socities that are more gender predjudiced 
 have higher levels of maternal mortality, slower rates of reduction of maternal 
 mortality, and life expectancy differentials \emph{less} favourable for women.
 This holds conditional on country income.  In terms of maternal mortality 
@@ -87,26 +83,198 @@ reductions, a 1 standard deviation (sd) reduction in gender predjudice is
 equivalent to a xx.xx-xx.xx sd increase in log(GDP).  Despite these large effects
 on women's health, our various measures of gender predjudice are shown to have 
 no significant effect on TB infection rates---a gender neutral illness which we 
-consider as a placebo test.
+consider as a placebo test.  Using historical data from the USA, we show that
+this phenomenon can be partially explained by the fact that areas with higher 
+levels of gender equality are less willing (or able) to apply available 
+technologies to improve female-specific health outcomes.
 \end{abstract}
 
-\emph{JEL codes:} X00, X00, X00, X00.
+\emph{JEL codes:} I14, I15, O15. 
 
 \thispagestyle{empty}
 \setlength{\baselineskip}{1.4\baselineskip} 
 \newpage 
 \begin{spacing}{1.4}
 
+%-------------------------------------------------------------------------------
 \section{Introduction}
-\epigraph{`\textit{`In some regions of the world inequality between women and men 
-directly involves matters of life and death, and takes the brutal form of unusually 
-high mortality rates for women...}'' }{\citet{sen2001many}}
+\epigraph{`\textit{`In some regions of the world inequality between women and 
+men directly involves matters of life and death, and takes the brutal form of 
+unusually high mortality rates for women...}'' }{\citet{sen2001many}}
+
+In September of 2000, all 189 UN Member States committed to addressing 8 
+Millennium Development Goals.  One of these goals (goal 5A) was to reduce by 
+three quarters the maternal mortality ratio (MMR) between 1990 and 2015.  Today 
+in 2015, the most recent measures suggest that MMR is 55\% (rather than 25\%) 
+what it was in 1990. However, progress towards other goals has been closer to 
+target. The world-wide rate of child mortality has fallen 50\% since 1990: far 
+closer to the stated aim of a two-thirds reduction.\footnote{Measures of child 
+mortality and MMR come from the World Bank Data Bank (measures SH.DYN.MORT and 
+SH.STA.MMRT respectively).  The most recent year available for each measure is 
+2013.  According to this data, World MMR has fallen 380 per 100,000 live births 
+to 210 per 100,000 births, while under 5 mortality has fallen from 90.2 per 
+1,000 live births to 45.6 per 1,000.}  In this paper we examine whether the 
+relatively anemic progress towards goal 5A, and female health outcomes more 
+generally, is because MMR is a \emph{woman} specific outcome, which gender-% 
+predjucided states are less likely to address.
+
+Prevailing popular logic suggests that an increase in investment levels will 
+lead to a reduction in maternal deaths (Lancet, Gates cite).  The results of 
+this paper suggest that investment alone is not enough.  We demonstrate that 
+cultural change, specifically preferences towards women's rights is a 
+fundamental determinant of women's health.  By various measures, a 1 sd 
+reduction in the level of gender predjudice is as important as a xx sd increase 
+in country income levels.
+
+%Using country by year 
 
 
+The female-specific disease burden from MMR is a considerable problem for public 
+health and economic and social well-being.  MMR has fallen sharply in the last 
+decade, but still remains unnecessarily high, at around 800 deaths a day. In 2013 
+alone, around 289,000 women died due to pregnancy or child birth related 
+complications \citep{WHO2014}. Almost all these deaths (99\%) are concentrated 
+entirely in developing countries. The average MMR in low income countries in 2010 
+was estimated to be 452 deaths per 100,000 births, similar to the rates that 
+prevailed in England and Wales in 1930 before the introduction of antibiotics.%
+\footnote{452 per 100,000 is the average MMR for the 35 low income countries 
+(World Bank classification). The MMR for England and Wales was 440, for Denmark 
+it was 380 and for the US it was 673 in the year 1930 \citep{loudon1992death}.} 
+This is pertinent given that 40-50\% of maternal deaths are on account of 
+post-partum puerperal sepsis which is treatable with antibiotics. Infant 
+mortality, which is also largely determined by infectious disease, claimed policy 
+attention much earlier and, apparently with more commitment. 
+
+
+
+%-------------------------------------------------------------------------------
 \section{Data and Descriptive Statistics}
+\subsection{Data}
+\label{scn:data}
+Our data comes from a wide range of sources: both at the macro (country$\times$%
+year) level, as well as microdata from household suveys conducted in a large
+number of countries.  This allows us to construct measures of health outcomes
+(both women-specific and gender-neutral), as well as gender predjudice measures
+(described below).  These are measured from 1960-2013, although important gaps
+exist in the case of some variables.
 
+Health outcome variables come directly from the World Bank data bank. These 
+include female and male life expectancy (in years), the maternal mortality ratio 
+(deaths per 100,000 live births), tuberculosis rates (incidence per 100,000 
+people), as well as GDP, which we use as a covariate.  These variables are 
+recorded yearly from 1960 to 2013, with the exception of MMR, which is recorded 
+quinquennially from 1990 to 2010 (inclusive).  Summary statistics for these 
+variables are included in panel A of table \ref{TAB:sumstats}.  We use age-%
+specific mortality rates for women and men which are supplied by 
+\citet{UNMortality2012}.  These are also available quinquennially, however 
+starting in 1960 and ending in 2005.  Additional details of these (and all) 
+variables are provided as a data appendix \ref{app:Data}.
 
+Measures of gender predjudice are obtained and calculated from a wide range of
+sources.  These include measures of women's rights, measures of female 
+representation in national legislatures and parliaments, gender bias inherent
+in majority spoken languages, and measures of parental bias towards the 
+preferred gender of their children.
 
+Women's right measures are collected from a previously under-exploited cross-%
+country rights dataset \citep{CingranelliData2013}, which provides data on three 
+different variables measuring political, economic and social Rights of women for 
+the period of 1981 to 2011 for around 127 (in 1981) to 192 (in 2011) countries.
+A discussion of the construction of these variables are included in the data
+appendix, and summary statistics are provided in table \ref{TAB:sumstats}.  To
+examine women's political represenation, we use data from the World Bank data bank
+which measures ``Proportion of seats held by women in national parliaments (\%)''.
+This is available for between 160 to 188 countries (depending on the year) for 
+the period of 1997--2013.
+
+Gender intensity of language measures are designed to capture the influences which
+spoken and written language has gender attitudes and outcomes in society.  Recent
+work has demonstrated that gender salience embedded in languages are correlated 
+with a range of gender outcomes including maternity leave policy differences across 
+countries \citep{givati2012law}, and female labour force and political 
+participation \citep{gay2013}. For gender salience of languages we use the data and 
+classification of \cite{gay2013} and \citet{givati2012law}, both of which focus on
+the female/male distinctions in grammar.  \citet{givati2012law} use the number of 
+cases of gender differentiated pronouns for 33 languages as a measure of gender 
+neutrality of the language, while \cite{gay2013} use the gender related grammatical 
+variables coming from the World Atlas of Linguistic structures and have four binary 
+variables related to gender neutrality of languages.  These are a Sex-Based Intensity 
+Index, Number Gender Intensity Index, Gender Assignment Intensity Index, Gender 
+Pronouns Intensity Index, as well as a Gender Intensity index (GII) which is a sum of 
+all these four indices.  Further details regarding the construction of these variables 
+are provided in appendix \ref{app:Data}.
+
+Finally, we aggregate an individual-specific measure of gender bias from a 
+series of widely applied household surveys to the country$\times$year level. In 
+the Demographic and Health Surveys (DHS) each surveyed woman is asked about her 
+ideal number of children, ideal number of boys, and ideal number of girls. Using 
+these stated preferences we construct the society-level desired sex ratio (DSR) 
+calculated by dividing the desired number of boy children by the desired number 
+of girls.  In this case a higher DSR implies more biased gender preferences of 
+mothers.
+
+%-------------------------------------------------------------------------------
+\subsection{Descriptive Statistics and Unconditonal Correlations} 
+The last five decades have witnessed large and sustained increases in the life 
+expectancy rates at birth for both men and women throughout the world. Typically 
+women have enjoyed a life expectancy advantage over men in almost all countries 
+of the world. However, some interesting cross country differences exist in the 
+data. In particular, there are two striking features that emerge from studying 
+life expectancy advantage of women over men in the developing world. First, when 
+the AIDS epidemic struck Africa in the 1990s, women lost more in terms of life 
+expectancy than men and with a corresponding reduction in life expectancy 
+advantage. However, with the arrival of anti-retro viral treatment in the mid 
+2000s onwards, the female advantage in life expectancy started to go up yet 
+again (See Figure \ref{SSALEtrend}).\footnote{See 
+\url{http://www.who.int/gender/hiv_aids/en/} for a discussion on gender and 
+AIDS.} Second, in contrast to not only all other parts of the world but also to 
+sub-Saharan Africa, women actually started with a life expectancy disadvantage 
+in South Asia (See Figure~\ref{SASLEtrend}). This is not surprising given that 
+South Asia is know to be more gender prejudiced than other regions of the world. 
+Only since the 1980s has the life expectancy of women exceeded that of men, 
+a trend that has increased over time.
+
+In turning to \emph{correlations} between life expectancy and country income
+levels, figure \ref{lLEGDP} plots female life expectancy against GDP. In each 
+panel (decade) of this figure, female life expectancy has a positive relation 
+with GDP. A similar picture emerges when plotting male life expectancy against 
+GDP.\footnote{See the scatter plots in \ref{ScatterFLE} for example.} This is 
+not surprising and has been well documented in the literature. However, 
+strikingly, once we plot the female life expectancy advantage i.e. the log 
+ratio of female to male life expectancy against GDP in Figure \ref{lLErGDP0}, we 
+see that relationship nearly disappears. While the link between health outcomes
+and country income level is strong, gender gaps in health outcomes have a much
+weaker correlation with country income.
+
+Turning to maternal mortality ratios (maternal deaths per 100,000 live 
+births), existing data suggests a recent downward trend since the 1990s.  
+However, while the maternal mortality ratio (MMR) has been sharply declining for 
+the world as a whole, there is considerable variation across regions, and, 
+according to some estimates, the decline has been sharp only in the post 2003 
+period after a much slower rate of change in the earlier decades.\footnote{It is 
+important to note the difficulty in accurately measuring MMR 
+\citep{hogan2010maternal,kassebaum2014global}. Here we generally work with WHO 
+estimates documented in \citet{hogan2010maternal}, however also construct our 
+own alternative estimates based on the sisterhood method \citep{Grahametal2008} 
+using DHS micro-data.}  Despite the sharp fall in the 2000s (see figure 
+\ref{fig:MMRRegion} for trends by region), only 16 countries, seven of which are 
+developing, are expected to achieve the MDG of reducing MMR by 75\% by the year 
+2015 \citep{kassebaum2014global}.  
+
+Finally, we plot unconditional correlations between female-specific health 
+measures and gender-predjudice varaibles across countries.  Graphs by year, 
+and also pooled over time provide descriptive evidence that countries with
+worse female-specific health outcomes are also those which are more gender-biased.
+Figure \ref{LFEgenderbias} displays female life expectancy and female life 
+expectancy advantage against the country average desired sex ratio of children.
+While life expectancy is negatively related to DSR (ie more biased countries
+have lower life expectancies), the negative correlation with life expectancy 
+advantage appears to be even more negative.  Similarly, for both DHS measures
+of MMR (figure \ref{MMRDgenderbias}) and WDI measures (figure 
+\ref{MMRWgenderbias}), more biased countries (as proxied by DSR) have higher
+rates of maternal death in childbirth.
+
+%--------------------------------------------------------------------------------
 \section{Methodology}
 \label{scn:methodology}
 \subsection{Gender Preferences and Women's Health}
@@ -149,7 +317,7 @@ each case, vary over time and space.  These initial variables are: desired sex
 ratio; the Cingranelli et al.\ political, economic and social rights of women
 measures; and proportional representation of women in national parliaments. We
 provide additional descriptive statistics and discussion of these variables in 
-section XX.
+section \ref{scn:data}.
 
 In each case we progressively control for $\log($GDP$)$, and an interaction 
 between $\log($GDP$)$ and our independent variable of interest.  We thus 
@@ -272,62 +440,120 @@ female-specific illnesses, then $\delta_1$ and $\delta_2$ should be negative in
 (\ref{eqn:sulfa}), but not significant in the gender-neutral pneumonia version
 of (\ref{eqn:sulfa}) estimated for pneumonia rather than MMR.
 
-
+%-------------------------------------------------------------------------------
 \section{Results}
+\subsection{Female Health and Gender Predjudice}
 
 
+\subsection{Gender Intensity of Language}
+Language grammar was established centuries in the past and is one of the 
+features of language that is stable over long periods of time. Moreover, 
+grammatical gender is something that an individual is born with and thus 
+arguably a more exogenous measure of gender bias in society.
 
 
-\subsection{US Case Study: Early Suffrage, Adoption of Medical 
-Technology, and Maternal Mortality}
-This supplement explores the interplay between early suffrage and the post-1937 fall in maternal mortality driven by the arrival of the first antibiotics in the United States. Women's suffrage was institutionalized at the national level in 1920 with the 19th amendment to the U.S. Constitution. However, prior to this, individual states had the authority to legislate women's suffrage with respect to state and local elections. About 40\% of U.S. passed suffrage laws prior to 1920. 
+\subsection{US Case Study: Early Suffrage, Adoption of Medical Technology, and 
+Maternal Mortality}
+In order to examine the \emph{mechanisms} which drive the relationship between
+gender bias and excessively poor female health outcomes we explore a historical
+case study.  We focus on the interplay between early suffrage and the post-1937 
+fall in maternal mortality driven by the arrival of the first antibiotics in 
+the United States. Women's suffrage was institutionalized at the national level 
+in 1920 with the 19\textsuperscript{the} amendment to the U.S. Constitution. 
+However, prior to this, individual states had the authority to legislate women's 
+suffrage with respect to state and local elections. About 40\% of U.S. passed 
+suffrage laws prior to 1920. 
 
-The evolution of women's suffrage is chronicled in \citet{miller2008women}. He contends, based on work by other scholars, that early adoption of women's suffrage was driven by slowly changing social norms with respect to role of women.\footnote{E.g. ``The most obvious pattern is geographic – all else equal, women in western states could vote before women elsewhere in America. Some historians suggest that frontier conditions were amenable to women’s suffrage because women supported restrictions on common western vices (drunkenness, gambling, and prostitution) or because the harsh realities of frontier life made it impossible to maintain traditional gender roles (Brown 1958; Grimes 1967).7 Many others argue that idiosyncratic circumstances in each state resulted in the vote for women (Larson 1971; Beeton 1986), citing rich historical evidence in support of this view.8 Quantitative studies yield strikingly inconclusive results (Cornwall, Dahlin, King, and Schiffman 2004). The single robust correlate of suffrage law enactment emerging from these studies is the share of women working in non-agricultural occupations (King, Cornwall, and Dahlin 2005). Although this presumably reflects changing social norms about the role of women, it evolved very gradually over time (Smith and Ward 1985; Goldin 1990) and can be distinguished econometrically from abrupt year-to-year legislative changes governing women’s right to vote.'' }  
+The evolution of women's suffrage is chronicled in \citet{miller2008women}. He 
+contends, based on work by other scholars, that early adoption of women's 
+suffrage was driven by slowly changing social norms with respect to role of 
+women.\footnote{E.g. ``The most obvious pattern is geographic – all else equal, 
+women in western states could vote before women elsewhere in America. Some 
+historians suggest that frontier conditions were amenable to women's suffrage 
+because women supported restrictions on common western vices (drunkenness, 
+gambling, and prostitution) or because the harsh realities of frontier life made 
+it impossible to maintain traditional gender roles (Brown 1958; Grimes 1967). 
+Many others argue that idiosyncratic circumstances in each state resulted in the 
+vote for women (Larson 1971; Beeton 1986), citing rich historical evidence in 
+support of this view.8 Quantitative studies yield strikingly inconclusive results 
+(Cornwall, Dahlin, King, and Schiffman 2004). The single robust correlate of 
+suffrage law enactment emerging from these studies is the share of women working 
+in non-agricultural occupations (King, Cornwall, and Dahlin 2005). Although 
+this presumably reflects changing social norms about the role of women, it 
+evolved very gradually over time (Smith and Ward 1985; Goldin 1990) and can be 
+distinguished econometrically from abrupt year-to-year legislative changes 
+governing women's right to vote.''}  
 
-The role of sulfa drugs in inducing a historic decline in maternal mortality is chronicled in \citet{jayachandran2008mortality}. Basically, log(MMR) was constant for a long period of time until 1937, when sulfa drugs were rapidly adopted in hospital and outpatient settings. Sulfa drugs were also important in reducing morbidity and mortality from pneumonia, as well. 
+The role of sulfa drugs in inducing a historic decline in maternal mortality is 
+chronicled in \citet{jayachandran2008mortality}. In brief terms, log(MMR) was 
+constant for a long period of time until 1937, when sulfa drugs were rapidly 
+adopted in hospital and outpatient settings. Sulfa drugs were also important in 
+reducing morbidity and mortality from pneumonia.
 
-Following the main paper, it is worthwhile to ask if states adopting early women's suffrage, which presumably had long standing norms evolving in favor of women's autonomy gained more from the arrival of antibiotics than their later suffrage counterparts. We will look at both maternal mortality, the condition of interest, and pneumonia mortality, which affected males more than females, and infants in particular. The graphs below show that the gap between early (anytime before 1920) and late (laws passed in 1920) suffrage adopters for MMR widened after the arrival for sulfa drugs, but not so for pneumonia mortality:
+To test the interaction between technology adoption, female empowerment and female
+health, we ask if states adopting early women's suffrage, which presumably had long 
+standing norms evolving in favor of women's autonomy, gained more from the arrival 
+of antibiotics than their later suffrage counterparts. We examine both maternal 
+mortality, the condition of interest, and pneumonia mortality, which affected males 
+more than females, and infants in particular. The descriptive graphs presented as
+figures \ref{trendMMR} and \ref{trendIPR} show that the gap between early (anytime 
+before 1920) and late (laws passed in 1920) suffrage adopters for MMR widened after 
+the arrival for sulfa drugs, but not so for pneumonia mortality.
 
 
-We can verify this econometrically using state level mortality and suffrage data from the above papers. Basically, for the 1925-1943 time period, we can regress logged MMR against a linear year trend, a dummy = 1 for year = 1937 or later, and their interaction. These RHS variables can additionally be interacted with an indicator for early suffrage = 1, so as to assess whether the level and trend breaks are larger for these states. This specification follows that used in the aforementioned \citet{jayachandran2008mortality} study. As a falsification, we will do the same for logged pneumonia mortality. All models include state fixed effects, cluster S.E. at the state level, and weight observations (state-level) by their population:
+We can test this econometrically using state level mortality and suffrage 
+data from the above papers. We estimate equation (\ref{eqn:sulfa}), where this 
+specification follows that used in the aforementioned \citet{jayachandran2008mortality} 
+study. As a falsification, we will do the same for logged pneumonia mortality. 
+All models include state fixed effects, cluster standard errors at the state level, 
+and weight observations (state-level) by their population.  Regression results are
+presented in table \ref{tab:sulfaSuffrage}.  Early suffrage states had significantly 
+larger trend and level breaks for maternal mortality. However, for pneumonia 
+mortality (for which there is a trend break only), we do not see any difference in 
+the ``sulfa effect.''  The results suggest that preferences correlated with female 
+suffrage may have influenced the specific adoption of medical technology for a 
+``women specific issue.''
 
-Early suffrage states had significantly larger trend and level breaks for maternal mortality. However, for pneumonia mortality (for which there is a trend break only), we do not see any difference in the ``sulfa effect.''
 
-The results suggest that preferences correlated with female suffrage may have influenced the specific adoption of medical technology for a ``women specific issue.''
+In order to examine the parallel trend assumptions underlying our double-difference 
+specification more completely, we plot event studies figures for both causes of 
+death.  These event studies follow the specification in table \ref{tab:sulfaSuffrage}, 
+however now fully interact early suffrage states with each year dummy.  This allows 
+us to plot the difference between early- and late-suffrage states by year, both 
+preceding, and after the sulfa reforms.  If the parallel trend assumptions hold, so 
+that the only difference between the two types of states arises after the date of the 
+reform, we should see that all estimates plotted prior to the reform are not 
+statistically distinguishable from zero.  What's more, if early suffrage states only 
+make additional inroads in \emph{female} specific causes, we should see that all 
+coefficients are insignificant for infant pneumonia, but post-reform coefficients 
+\emph{are} significant for MMR.
 
+This is precisely what we observe in figures \ref{eventMMR} and  \ref{eventIPR}.  
+In figure \ref{eventMMR} we see that all confidence intervals include 0 prior to the 
+reform, however in the year of the arrival of sulfa, and in the post-reform years, 
+early suffrage states make significant improvements in MMR indicators when compared 
+with their late-suffrage counterparts.  This suggests that prior to the reform, in the 
+absence of sulfanide drugs, rates of maternal mortality evolved on a similar 
+trajectory in both states, while in post-reform years, early suffrage states employ 
+the available technology more effectively to address female-specific mortality causes.
 
-In order to examine the parallel trend assumptions underlying our double-difference specification more 
-completely, we plot event studies figures for both causes of death.  These event studies follow the 
-specification in table \ref{MMRPneumSulfa}, however now fully interact early suffrage states with each year dummy.  This 
-allows us to plot the difference between early- and late-suffrage states by year, both preceding, and after 
-the sulfa reforms.  If the parallel trend assumptions hold, so that the only difference between the two types
-of states arises after the date of the reform, we should see that all estimates plotted prior to the reform 
-are not statistically distinguishable from zero.  What's more, if early suffrage states only make additional 
-inroads in \emph{female} specific causes, we should see that all coefficients are insignificant for infant 
-pneumonia, but post-reform coefficients \emph{are} significant for MMR.
+When compared to figure \ref{eventIPR}, the contrast is stark.  With the exception of 1 
+in 18 years, there is no significant difference between the early- and the late-suffrage 
+states in their trends in pneumonia death rates.  Fundamentally, as suggested in figures 
+\ref{trendIPR}, both states are equally able to leverage the arrival of sulfa drugs to 
+reduce the gender-neutral (or indeed slightly male-biased) disease burden. This 
+reinforces the idea discussed above that there are important differences in the way that 
+more gender-biased states are able to employ health care technology to all, and to 
+female-speficic, health outcomes.
 
-This is precisely what we observe in figures  \ref{eventMMR} and  \ref{eventIPR}.  In figure 7 we see that all confidence intervals
-include 0 prior to the reform, however in the year of the arrival of sulfa, and in the post-reform years, 
-early suffrage states make significant improvements in MMR indicators when compared with their 
-late-suffrage counterparts.  This suggests that prior to the reform, in the absence of sulfanid drugs, 
-rates of maternal mortality evolved on a similar trajectory in both states, while in post-reform years, early 
-suffrage states employ the available technology more effectively to address female-specific mortality 
-causes.
-
-When compared to figure \ref{eventIPR}, the contrast is stark.  With the exception of 1 in 18 years, there is no 
-significant difference between the early- and the late-suffrage states in their trends in pneumonia 
-death rates.  Fundamentally, as suggested in figure 6b, both states are equally able to leverage the 
-arrival of sulfa drugs to reduce the gender-neutral (or indeed slightly male-biased) disease burden. This 
-reinforces the idea discussed above that there are important differences in the way that more 
-gender-biased states are able to employ health care technology to all, and to female-speficic, health 
-outcomes.
+\section{Alternative Specifications and Data}
 
 
 \section{Conclusion}
 
-Preventable maternal mortality is still very high in many developing countries, even after falling by almost 50\% since 1990 to the present day. Moreover, while IMR has been falling steadily in the last few decades, MMR rates started to fall only in the 1990s after initial stagnation. In this paper we show that MMR is a woman specific condition and differences in MMR and female life expectancy advantage across countries are a reflection of differences in gender attitudes across countries. 
+%Preventable maternal mortality is still very high in many developing countries, even after falling by almost 50\% since 1990 to the present day. Moreover, while IMR has been falling steadily in the last few decades, MMR rates started to fall only in the 1990s after initial stagnation. In this paper we show that MMR is a woman specific condition and differences in MMR and female life expectancy advantage across countries are a reflection of differences in gender attitudes across countries. 
 
-We find that regardless of the measures of gender bias or woman's status in society we use including the stated son preference of mothers, women's political rights or the gender intensity of language grammar, we consistently find that  that cross country differences in gender inequalities in health outcomes are a reflection of differences in gender bias across societies and go beyond differences in income. The main policy implication is that specific interventions to reduce maternal mortality and improve female health outcomes might be required even in high growth poor countries with high gender prejudice.
+%We find that regardless of the measures of gender bias or woman's status in society we use including the stated son preference of mothers, women's political rights or the gender intensity of language grammar, we consistently find that  that cross country differences in gender inequalities in health outcomes are a reflection of differences in gender bias across societies and go beyond differences in income. The main policy implication is that specific interventions to reduce maternal mortality and improve female health outcomes might be required even in high growth poor countries with high gender prejudice.
 
 \newpage
 \bibliographystyle{chicago}
@@ -336,19 +562,108 @@ We find that regardless of the measures of gender bias or woman's status in soci
 \newpage
 \section*{Figures}
 \begin{figure}[htpb!]
-\caption{Maternal Mortality Event Study Plot}
-\label{eventMMR}
-\includegraphics[scale=0.95]{../Source/atheen/eventMMR.eps}
+\centering
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/SSATrends}}
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/SSADiff}}
+\caption{\footnotesize In Panel 1 we plot the Female, Male and Total Life Expectancy against time. In Panel 2, we plot the Female-Male Life Expectancy advantage over time. The Life Expectancy data comes from the World Bank WDI and spans over more than 190 countries and is available for the period of 1960 - 2011. Here we plot them for the \textbf{sub-Saharan Africa} region (World Bank Region Classification is used). \label{SSALEtrend}}
+\end{figure}
+
+
+
+\begin{figure}[htpb!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/SASTrends}}
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/SASDiff}}
+\caption{\footnotesize In Panel 1 we plot the Female, Male and Total Life Expectancy against time. In Panel 2, we plot the Female-Male Life Expectancy advantage over time.  The Life Expectancy data comes from the World Bank WDI and spans over more than 190 countries and is available for the period of 1960 - 2011. Here we plot them for the \textbf{South Asia } region (World Bank Region Classification is used). \label{SASLEtrend}}
+\end{figure}
+
+
+\begin{figure}[htpb!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.22]{./../figures/lLEGDP1970}}
+\subfloat[] {\includegraphics[scale= 0.22]{./../figures/lLEGDP1990}}
+\subfloat[] {\includegraphics[scale= 0.22]{./../figures/lLEGDP2010}}
+\caption{\footnotesize Female Life Expectancy is plotted  against log of GDP. The Life Expectancy (and the GDP) data comes from the World Bank WDI and spans over more than 190 countries and is available for the period of 1960 - 2011. Here we plot them for the years 1970, 1990 and 2010. \label{lLEGDP}}
 \end{figure}
 
 \begin{figure}[htpb!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.22]{./../figures/lLErGDP1970}}
+\subfloat[] {\includegraphics[scale= 0.22]{./../figures/lLErGDP1990}}
+\subfloat[] {\includegraphics[scale= 0.22]{./../figures/lLErGDP2010}}
+\caption{\footnotesize The log of the ratio of Female to Male Life Expectancy is plotted  against log of GDP. The Life Expectancy data comes from the World Bank WDI and spans over more than 190 countries and is available for the period of 1960 - 2011. Here we plot them for the years 1970, 1990 and 2010. \label{lLErGDP0}}
+\end{figure}
+
+\begin{figure}[htpb!]
+\begin{center}
+\includegraphics[scale=0.9]{./../figures/MMRRegion.eps} 
+\caption{Maternal Mortality Ratio by Region: 1990-2010 (figure from \citet{BhalotraClarke2013})}
+\label{fig:MMRRegion}
+\end{center}
+\end{figure}
+
+\begin{figure}[htpb!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/lLEdesiredall}}
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/lLErdesiredall}}
+\caption{Female Life Expectancy is plotted against Desired Sex ratio (boys to girls). The Life Expectancy data comes from the World Bank WDI and spans over more than 190 countries and is available for the period of 1960 - 2011. Here we plot them for all years collapsed. The Desired Sex ratio (boys to girls) data is constructed from the DHS surveys which exists for 63 countries (mostly developing)}
+\label{LFEgenderbias}
+\end{figure}
+
+\begin{figure}[htpb!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/lMMRbDHSdesired2000}}
+\subfloat[] {\includegraphics[scale= 0.25]{./../figures/lMMRbDHSdesired2010}}
+\caption{MMR (per 100k births) from the DHS is plotted against Desired Sex ratio (boys to girls). The MMR data comes from a newly constructed database by Bhalotra et al. using the DHS sibling files. This data is based on the DHS sample (developing countries) of 45 countries and is available for the period of 1970 - 2012. Here we plot them for the DECADES 2000 and 2010. The Desired Sex ratio (boys to girls) data is constructed from the DHS surveys which exists for 63 countries (mostly developing).}
+\label{MMRDgenderbias}
+\end{figure}
+
+
+\begin{figure}[htpb!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.18]{./../figures/lMMRWDIdesired1990}}
+\subfloat[] {\includegraphics[scale= 0.18]{./../figures/lMMRWDIdesired2000}}
+\subfloat[] {\includegraphics[scale= 0.18]{./../figures/lMMRWDIdesired2010}}
+\caption{MMR from WDI is plotted against Desired Sex ratio (boys to girls). The MMR data comes from World Bank WDI data which is based on data from WHO. It spans over around 180 countries from across the world and is available for 5 points of time - 1990, 1995, 2000, 2005, 2010. Here we plot data for three time periods, 1990, 2000, 2005. The Desired Sex ratio (boys to girls) data is constructed from the DHS surveys which exists for 63 countries (mostly developing). }
+\label{MMRWgenderbias}
+\end{figure}
+
+
+\begin{figure}[htpb!]
+\begin{center}
+\includegraphics[scale=0.85]{../Source/atheen/MMRtrends.eps}
+\caption{Trends in Maternal Mortality by Suffrage Type}
+\label{trendMMR}
+\end{center}
+\end{figure}
+
+\begin{figure}[htpb!]
+\begin{center}
+\includegraphics[scale=0.85]{../Source/atheen/IPRtrends.eps}
+\caption{Trends in Pneumonia Mortality by Suffrage Type}
+\label{trendIPR}
+\end{center}
+\end{figure}
+
+\begin{figure}[htpb!]
+\begin{center}
+\includegraphics[scale=0.9]{../Source/atheen/eventMMR.eps}
+\caption{Maternal Mortality Event Study Plot}
+\label{eventMMR}
+\end{center}
+\end{figure}
+
+\begin{figure}[htpb!]
+\begin{center}
+\includegraphics[scale=0.9]{../Source/atheen/eventIPR.eps}
 \caption{Pneumonia (Placebo) Event Study Plot}
 \label{eventIPR}
-\includegraphics[scale=0.95]{../Source/atheen/eventIPR.eps}
+\end{center}
 \end{figure}
 
 \newpage
 \section*{Tables}
+\input{./../tables/sumStats.tex}
 \input{./../Results/dsr/MMR-DSR.tex}
 \input{./../Results/dsr/ln_LE_ratio-DSR.tex}
 \input{./../Results/dsr/tb-DSR.tex}
@@ -365,13 +680,152 @@ We find that regardless of the measures of gender bias or woman's status in soci
 \input{./../tables/tbGII.tex}
 \end{landscape}
 \input{./../tables/mechanism.tex}
+\begin{landscape}
+\input{./../Results/dsr/abortion-DSR.tex}
+\end{landscape}\begin{landscape}
+\input{./../tables/abortionGII.tex}
+\end{landscape}
+\input{./../tables/rightsabortionLeg.tex}
 
 
 \newpage
-\section*{Appendix Tables}
+\appendix
+\section{Data Appendix}
+\label{app:Data}
+\subsection{\citet{CingranelliData2013} Data}
+The women's political rights variable, takes into account women's right to vote, 
+the right to run for political office, the right to hold elected and appointed 
+government positions, the right to join political parties, and the right to petition 
+government officials. 
+
+The women's economic rights variable takes into account the rights to equal pay 
+for equal work; free choice of profession or employment without the need to obtain 
+a husband or male relative's consent; to gainful employment without the need to 
+obtain a husband or male relative's consent; equality in hiring and promotion 
+practices; job security (maternity leave, unemployment benefits, no arbitrary 
+firing or layoffs, etc...); non-discrimination by employers; to be free from 
+sexual harassment in the workplace; to work at night; to work in occupations 
+classified as dangerous; to work in the military and the police force.  
+
+And finally, the women's social rights include the rights to equal inheritance; 
+to enter into marriage on a basis of equality with men; to travel abroad; to 
+obtain a passport; to confer citizenship to children or a husband; to initiate a 
+divorce; to own, acquire, manage, and retain property brought into marriage; to 
+participate in social, cultural, and community activities; to an education; to 
+choose a residence/domicile; freedom from female genital mutilation of children 
+and of adults without their consent; and the freedom from forced sterilization.
+
+All three of these variables take 4 discrete values of 0, 1, 2, and 3, with 
+higher values indicating more rights for women. In addition we construct 2 other 
+composite rights variables, the first one being the the first principal component 
+of women's political, economic  and social rights and the second one only 
+incorporates women's political and economic rights. Data on women's political 
+and economic rights exists for the entire period of 1981- 2011, whereas data on 
+women's social rights was discontinued after the year 2004 (see table 
+\ref{RightsCount} for a full list of data availability by time.
+
+%--------------------------------------------------------------------------------
+\subsection{Gender Intensity of Language}
+\citet{givati2012law} use the number of cases of gender differentiated pronouns 
+for 33 languages (mostly but not entirely European) as a measure of gender 
+neutrality of the language. According to their classification, the 33 languages 
+can be divided into 4 distinct groups, with each group having either 0 (6 
+languages), 1 (10 languages), 2 (14 languages), or 4 (3 languages) gender 
+differentiated pronouns. Languages with a higher number of gender differentiated 
+pronouns are supposed to be less gender neutral.
+
+\cite{gay2013} construct measures from the World Atlas of Linguistic structures.
+These are four binary variables related to gender neutrality of languages: 
+Sex-Based Intensity Index, Number Gender Intensity Index, Gender Assignment 
+Intensity Index, Gender Pronouns Intensity Index. Their final Gender Intensity 
+index (GII) is a sum of all these four indices (or some combination of a subset 
+of these indices). Since, all these four indices do not exist for all countries 
+we sometimes choose a subset of these indices in order to maximize the number of 
+observations. Suppose we choose to use three of these indices to construct our 
+final Gender neutrality index, then $GII \in {0, 1, 2, 3}$ and all languages 
+can be divided into 4 distinct classes of gender neutrality. For our final 
+analysis we  use all eight of the following measures, the first seven of which 
+come from \cite{gay2013} and the final one comes from \citet{givati2012law}.
+
+
+\begin{enumerate}
+\item Sex-Based Intensity Index (SBII) 
+\item Number Gender Intensity Index (NGII)
+\item Gender Assignment Intensity Index (GAII) 
+\item Gender Pronouns Intensity Index (GPII) 
+\item GII0 = NGII + SBII + GAII + GPII
+\item GII1 = NGII + SBII + GAII
+\item GII2 = NGII + SBII + GPII
+\item gtroiano = number of cases of gender differentiated pronouns.
+\end{enumerate}
+
+
+%-------------------------------------------------------------------------------
+\section{The Contribution of IMR and MMR to Gender Differences in Mortality}
+In this section we quantify the contribution of maternal mortality and female to
+ male infant mortality ratio to age specific mortality rates across genders. In 
+previous studies, MMR has been found to contribute to female life expectancy. 
+\citet{jayachandran2008life} show how a drop in MMR contributed to increased 
+female life expectancy in Sri Lanka. \citet{canudas2014potential} estimate the 
+contribution of maternal mortality to Reproductive-Aged Life Expectancy (RALE).
+ They find that over the twentieth century, 5 years of RALE were gained in 
+developed countries and around 10\% of this gain, or approximately half a year, 
+can be attributed to reductions in Maternal mortality. ``In sub-Saharan African 
+countries, the possible achievable gains fluctuate between 0.24 and 1.47 years, 
+or 6\% and 44\% of potential gains in RALE'' \citep{canudas2014potential}.
+
+Here, we establish that higher maternal mortality ratios can explain part of the 
+excess female mortality in reproductive ages, which in turn explains part of the 
+gender gap in life expectancy across countries. We first consider the differences 
+in age specific mortality rates across genders and also the relative 
+contributions of IMR and MMR (if any) to these mortality rates using data from UN 
+mortality tables. In order to do so we consider 3 distinct age classes viz.\ 0-14, 
+15-49 and 50+. The 15-49 age group is typically considered the reproductive age 
+class for women and hence this is the class in which most maternal mortality 
+should be concentrated. In order to compare differences between women and men, 
+we construct the ratios of mortality rates of women to men in these three 
+different age categories and use the log values of these ratios as our primary 
+dependent variable.\footnote{Dependent variable = 
+$\ln(\frac{\text{female mortality in age category X}}
+{\text{male mortality in age category X}})*100000$; where X can be (0-14), 
+(15-49), or, (50 +). This data comes from \citet{UNMortality2012}.}
+
+
+Since this data exists for the entire world sample, we are able to analyze differences across countries belonging to the three different income categories of high, middle and low income countries following the World Bank's income classification. We thus regress the log ratio of female to male mortality rates (times 100,000) by different age categories on maternal mortality and infant mortality ratio for different countries in Table~\ref{MortalityMMRIncome}. In the three panels of Table~\ref{MortalityMMRIncome} we respectively have the low, middle and high income country samples.\footnote{See the appendix section~\ref{wblist} for a list of countries belonging to each of these categories.} In the odd numbered columns, we control for MMR and the log of GDP. In the even numbered columns we control for MMR, the log of GDP and the IMR ratio (female to male).\footnote{We include country fixed effects and time dummies in all columns and always use cluster robust standard errors clustered at the country level.}  
+
+In Table~\ref{MortalityMMRIncome}, we first notice that for both the low and middle income category countries (i.e. in Panels 1 and 2), MMR significantly increases the excess female mortality for the 15-49 age category which is the reproductive age for women. This implies that some of the excess female to male mortality in the reproductive age is explained by MMR. In other words at least some of the 21\% of the 6 million women who are missing in their reproductive age every year around the world can be attributed to maternal mortality.\footnote{On the other hand, MMR significantly reduces excess female mortality in the 15-49 category and increases it in the 50+ category for high income countries. However, since MMR is concentrated solely in poorer countries, we cannot read too much into these numbers for developed countries.}\footnote{Both IMR and MMR are from the WDI and hence for the whole world sample. The IMR is available for 223 countries for the years 1990, 2000, 2010, 2012, while the MMR is available for 181 countries for the years 1990, 1995, 2000, 2005, 2010, and they have common data for 180 countries for the years 1990, 2000, and 2010. The 2 panels represent Low Income and Middle Income countries from the World Bank income group classification. There are 35 low income countries and 95 middle income countries according to this classification.  Again the female to male mortality ratios are available for the years 5 yearly from 1960 to 2005 and hence all these variables together are available only for the years 1990 and 2000. Hence there is a fall in observations from Col1 to Col2.} 
+
+
+Let us now consider the marginal effects of our MMR variable (which is measured per 100,000 live births throughout the paper) on the log ratio of excess female mortality rates in the reproductive age. In order to do so we consider column 4 as our baseline specification. As far as the marginal effects for low income countries are concerned, a one s.d. (312.3) increase in MMR (measured as per 100,000 live births) leads to a 5.44\% (= (17.41*312.3)/100000) increase in the female to male mortality ratio in the reproductive age category. This is equivalent to 744\% (0.054/0.0073) of the mean of the female to male mortality in low income countries and around 35.78\% of the s.d. of the ratio of female to male mortality in this age category in these countries. For middle income countries on the other hand, a one s.d. (266.332) increase in MMR leads to a 4.29 (= (16.08*266.332)/100000) percentage points increase in the female to male mortality ratio in the reproductive age category. This is equivalent to a 14.03\% (0.043/0.305) decrease of the mean ratio of female to male mortality and around 13.67\% of the s.d. ratio of female to male mortality in this age category in these countries. The female to male infant mortality ratio on the other hand has no significant effect on the mortality rates in any of the three different age categories.\footnote{In the appendix Table~\ref{MortalityMMR} we provide a specification for the whole world sample pooled together.} In other words, if the average MMR in the low income countries in our sample which is around 451 in the year 2010, came down to the average MMR of the Middle income countries which is around 145 in the same year, then this fall of around 306 in the MMR would lead to a reduction in excess female mortality in the reproductive age by around 5\%. 
+
+%In the above paragraphs we have established that MMR contributes to the excess female mortality in the reproductive ages of 15-49 in the low and middle income countries. Next, we study the contribution of MMR directly on female life expectancy advantage. Like the previous regression specifications, using a (country) Fixed Effects panel data framework with time dummies, in Table~\ref{FLEIMRWDIIncome} we regress the log ratio of female to male life expectancy on maternal mortality and the female to male infant mortality ratio from the WDI data for different regions of the world. Both life expectancy and MMR are measured as five yearly averages.  
+%
+%In the three panels of Table~\ref{FLEIMRWDIIncome} we respectively present the regression results for low, middle and high income category countries. We notice that maternal mortality reduces female advantage in life expectancy but this effect is not significant.\footnote{In the appendix Table~\ref{FLEIMRWDI} we provide a specification for the whole world sample pooled together.} 
+
+
+%Considering column 6 as the baseline specification, we notice that a one s.d. (321.414) higher MMR implies about 7.71 decrease in the ratio of female advantage in life expectancy for our low income country sample of countries. This represents a 16.23\% of the mean and to around 25.03\% of the s.d. log life expectancy ratio of female to male for the low income country sample. \citet{canudas2014potential}on the other hand, find that the elimination of maternal mortality led to an increase of half a year of female reproductive age life expectancy (RALE) from 1930 to 1960 for industrialized countries. However, according to their calculations the gains in RALE from elimination of maternal mortality can range from as low as 0.24 years in Namibia to 1.47 years in Chad.\footnote{Female reproductive age life expectancy (RALE) is the female life expectancy calculated  from age 15 to 49 \citet{canudas2014potential}.}  
+
+Let us now consider some individual country examples to see how different levels of MMR lead to different rates of life expectancy differences between women and men. If we consider India for example, which is a lower middle income country according to the World Bank income classification, the average MMR is 390 and the difference between female and male life expectancy is only of  0.59 years. Again, consider Nepal which also had a very high rate of MMR of 420 with the female advantage being only of 0.86 years. Again in Bangladesh, the MMR is around 466 and the women are actually at a disadvantage of 0.65 years. But, if we consider a country like Brazil which has roughly the same income level (upper middle income country) as India, they have a relatively low MMR rate of 84 and a female advantage in LE of 6.11 years. Similarly Thailand has an MMR of 55.2 and 6.07 years of female advantage. 
+
+
+\newpage
+\section{Appendix Figures}
+\begin{figure}[h!]
+\centering
+\subfloat[] {\includegraphics[scale= 0.18]{./../figures/ScatterFLE_2010}}
+\subfloat[] {\includegraphics[scale= 0.18]{./../figures/ScatterMLE_2010}}
+\subfloat[] {\includegraphics[scale= 0.18]{./../figures/ScatterMLEr_2010}}
+\caption{Female Life Expectancy (Panel 1, Male Life Expectancy (Panel 2) and Log(Female to Male Life Expectancy ratio) (Panel 3) is plotted against log of GDP. The Life Expectancy (and the GDP) data comes from the World Bank WDI and spans over more than 190 countries and is available for the period of 1960 - 2011. Here we plot them for the year 2010. \label{ScatterFLE}}
+\end{figure}
+
+\newpage
+\section{Appendix Tables}
 \input{./../Results/rights/MMR-WP.tex}
 \input{./../Results/rights/ln_LE_ratio-WP.tex}
 \input{./../Results/rights/tb-WP.tex}
+\input{./../tables/rightsDesc.tex}
+\input{./../tables/MMRmortality.tex}
+
 
 
 \end{spacing}

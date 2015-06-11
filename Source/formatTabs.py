@@ -31,26 +31,31 @@ tr   = '\\toprule'
 br   = '\\bottomrule'
 mc1  = '\\multicolumn{'
 mc2  = '}}'
-twid = ['7','7', '7','6']
-tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}','}{p{15.2cm}}']
+twid = ['7','7','7','7','7','6']
+tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}','}{p{16.8cm}}',
+        '}{p{16.8cm}}','}{p{15.2cm}}']
 mc3  = '{\\begin{footnotesize}\\textsc{Notes:} '
 lname = "Fertility$\\times$desire"
 tname = "Twin$\\times$desire"
 tsc  = '\\textsc{' 
 ebr  = '}'
 R2   = 'R$^2$'
-n1   = ['MMR is from WDI, and is defined as deaths per 100,000 live births',
-        'TB is from WDI and is the incidence of tuberculosis per 100,000 people.'
-        ,'LE ratio is the log of the ratio of female to male LE times 100,000']
-n2   = ['All values are quinquennial averages for 160 countries.',
-        'TB data is available yearly from 1990-2012 for almost all countries',
-        'The estimation sample consists of 150 countries for years 1981-2012.']
+n1=['MMR is from WDI, and is defined as deaths per 100,000 live births',
+    'TB is from WDI and is the incidence of tuberculosis per 100,000 people.'
+    ,'LE ratio is the log of the ratio of female to male LE times 100,000',
+    'Abortion comes from womenrights.org, and refers to unrestricted access',
+    'Abortion legislation takes +1 if legalising abortion, and -1 if criminalising.']
+n2=['All values are quinquennial averages for 160 countries.',
+    'TB data is available yearly from 1990-2012 for almost all countries',
+    'The estimation sample consists of 150 countries for years 1981-2012.',
+    'Estimation sample includes countries with existing abortion legislation',
+    'Estimation sample includes countries with existing abortion legislation']
 
 #==============================================================================
 #== (2) Generate rights table
 #==============================================================================
 cc = 0
-for v in ['MMR','tb','ln_LE_ratio']:
+for v in ['MMR','tb','ln_LE_ratio','abortion','abortionLeg']:
 
     if v=='MMR':
         polRight = RES + 'rights/'+v+'-wopol_5.tex' 
@@ -102,7 +107,7 @@ for v in ['MMR','tb','ln_LE_ratio']:
 #==============================================================================
 #== (3) Edit GII table
 #==============================================================================
-for v in ['MMR','tb','ln_LE_ratio']:
+for v in ['MMR','tb','ln_LE_ratio','abortion','abortionLeg']:
     GII = RES + 'gii/'+v+'GII.tex' 
 
     giiT = open(TAB +v+ 'GII.tex', 'w')
@@ -136,7 +141,8 @@ Gender = RES + 'summary/gender.tex'
 
 sumT = open(TAB + 'sumStats.tex', 'w')
 sumT.write('\\begin{table}[htpb!] \n \\begin{center} \n' 
-'\\caption{Descriptive Statistics}\n \\begin{tabular}{lccccc} '
+'\\caption{Descriptive Statistics}\n \\label{TAB:sumstats} '
+'\\begin{tabular}{lccccc} '
 '\n \\toprule\\toprule \\vspace{5mm} \n'
 '& N & Mean & Std. Dev. & Min. & Max. \\\\ \\midrule \n'
 '\multicolumn{6}{l}{\\textbf{Panel A: Health Measures}} \\\\ \n')
@@ -152,15 +158,15 @@ for i,line in enumerate(He):
 
 sumT.write(' \n \\multicolumn{6}{l}{\\textbf{Panel B: Gender Measures}}\\\\ \n ')
 for i,line in enumerate(Ge):
-    if i>8 and i<17:
+    if i>8 and i<16:
         line = line.replace('(%)','')
         line = line.replace('\\hline','\\midrule')
         sumT.write(line)
 
-sumT.write('\n'+mr+mc1+twid[3]+tcm[3]+mc3+
-           "Sample consists of country$\\times$year measures between 1960 and"
-           "2013 (with gaps).  Further discussion of coverage is discussed in"
-           "appendix XX."
+sumT.write('\n'+mr+mc1+twid[5]+tcm[5]+mc3+
+           "Sample consists of country$\\times$year measures between 1960 and "
+           "2013 (with gaps).  Further discussion of coverage is discussed in "
+           "appendix \\ref{app:data}."
            "\\end{footnotesize}} \\\\ \\bottomrule \n \\end{tabular}\\end{center}"
            "\\end{table}")
 sumT.close()

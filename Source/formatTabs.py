@@ -31,8 +31,8 @@ tr   = '\\toprule'
 br   = '\\bottomrule'
 mc1  = '\\multicolumn{'
 mc2  = '}}'
-twid = ['7','7', '7']
-tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}']
+twid = ['7','7', '7','6']
+tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}','}{p{15.2cm}}']
 mc3  = '{\\begin{footnotesize}\\textsc{Notes:} '
 lname = "Fertility$\\times$desire"
 tname = "Twin$\\times$desire"
@@ -126,3 +126,41 @@ for v in ['MMR','tb','ln_LE_ratio']:
 
 giiT.close()
 print 'end'
+
+
+#==============================================================================
+#== (3) Summary
+#==============================================================================
+Health = RES + 'summary/health.tex'
+Gender = RES + 'summary/gender.tex'
+
+sumT = open(TAB + 'sumStats.tex', 'w')
+sumT.write('\\begin{table}[htpb!] \n \\begin{center} \n' 
+'\\caption{Descriptive Statistics}\n \\begin{tabular}{lccccc} '
+'\n \\toprule\\toprule \\vspace{5mm} \n'
+'& N & Mean & Std. Dev. & Min. & Max. \\\\ \\midrule \n'
+'\multicolumn{6}{l}{\\textbf{Panel A: Health Measures}} \\\\ \n')
+
+He  = open(Health,  'r').readlines()
+Ge  = open(Gender, 'r').readlines()
+
+for i,line in enumerate(He):
+    if i>8 and i<16:
+        line = line.replace('\\hline','\\midrule')
+        line = line.replace('(%)','')
+        sumT.write(line)
+
+sumT.write(' \n \\multicolumn{6}{l}{\\textbf{Panel B: Gender Measures}}\\\\ \n ')
+for i,line in enumerate(Ge):
+    if i>8 and i<17:
+        line = line.replace('(%)','')
+        line = line.replace('\\hline','\\midrule')
+        sumT.write(line)
+
+sumT.write('\n'+mr+mc1+twid[3]+tcm[3]+mc3+
+           "Sample consists of country$\\times$year measures between 1960 and"
+           "2013 (with gaps).  Further discussion of coverage is discussed in"
+           "appendix XX."
+           "\\end{footnotesize}} \\\\ \\bottomrule \n \\end{tabular}\\end{center}"
+           "\\end{table}")
+sumT.close()

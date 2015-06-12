@@ -1,0 +1,23 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{MMR and Desired Sex Ratio (boys/girls)}
+\scalebox{0.7}{
+\begin{tabular}{l*{5}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+                    &     MMR \ \   &     MMR \ \   &     MMR \ \   &     MMR \ \   &     MMR \ \   \\
+\midrule
+Desired Sex Ratio   &       824.7** &       655.0** &       667.0** &       923.9***&      2627.7***\\
+                    &     [329.4]   &     [299.3]   &     [286.5]   &     [252.9]   &     [617.9]   \\
+ln(GDP)             &               &               &        40.9   &        12.4   &       318.5***\\
+                    &               &               &      [48.5]   &      [49.8]   &     [119.6]   \\
+Desired Sex Ratio$\times$ ln(GDP)&               &               &               &               &      -285.3***\\
+                    &               &               &               &               &     [100.7]   \\
+Constant            &      -476.0   &      -405.1   &      -712.6   &     -1514.3***&     -3371.0***\\
+                    &     [358.9]   &     [325.8]   &     [494.2]   &     [483.9]   &     [734.5]   \\
+\midrule
+R-squared           &        0.09   &        0.92   &        0.92   &        0.93   &        0.93   \\
+Observations        &         310   &         310   &         307   &         307   &         307   \\
+ Country FE &&Y&Y&Y&Y\\ Year FE&&Y&Y&Y&Y\\ 
+Desired Fertility&&&&Y&Y\\
+\bottomrule\end{footnotesize}}\end{tabular}}\end{table}

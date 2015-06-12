@@ -1,0 +1,28 @@
+\begin{table}[htpb!] 
+ \begin{center} 
+\caption{Descriptive Statistics}
+ \label{TAB:sumstats} \begin{tabular}{lccccc} 
+ \toprule\toprule \vspace{5mm} 
+& N & Mean & Std. Dev. & Min. & Max. \\ \midrule 
+\multicolumn{6}{l}{\textbf{Panel A: Health Measures}} \\ 
+MMR (Deaths per 100,000 live births)&         905&      238.46&      315.79&           2&        1900\\
+MMR calculated from DHS microdata&         354&      493.89&      563.90&           0&        6149\\
+Life Expectancy (Male)&       10054&       60.69&       10.92&          16&          88\\
+Life Expectancy (Female)&       10054&       65.27&       12.23&          23&          87\\
+ln(Life Expectancy Ratio)$\times$100,000 (F/M)&       10054&     7111.35&     3454.01&       -6234&       32131\\
+ln(GDP)             &        8368&        7.44&        1.68&           4&          12\\
+Tuberculosis Incidence per 100,000 people&        4680&      140.28&      187.91&           0&        1826\\
+ 
+ \multicolumn{6}{l}{\textbf{Panel B: Gender Measures}}\\ 
+ Women's Economic Rights&        4779&        1.32&        0.70&           0&           3\\
+Women's Political Rights&        4830&        1.79&        0.65&           0&           3\\
+Women's Social Rights&        3395&        1.24&        0.84&           0&           3\\
+Gender Inequality Index&        4558&        2.45&        1.66&           0&           4\\
+Proportion of Women in Parliament&        2801&       14.90&       10.32&           0&          56\\
+Abortion allowed without restrictions&        6207&        0.31&        0.46&           0&           1\\
+Progressive Abortion Reform$\times$100&        6207&        0.24&        4.91&           0&         100\\
+Regressive Abortion Reform$\times$100&        6207&        0.06&        2.54&           0&         100\\
+Desired Sex Ratio   &        2997&        1.12&        0.14&           0&           3\\
+
+\midrule\multicolumn{6}{p{15.2cm}}{\begin{footnotesize}\textsc{Notes:} Sample consists of country$\times$year measures between 1960 and 2013 (with gaps).  Further discussion of coverage is discussed in appendix \ref{app:Data}.\end{footnotesize}} \\ \bottomrule 
+ \end{tabular}\end{center}\end{table}

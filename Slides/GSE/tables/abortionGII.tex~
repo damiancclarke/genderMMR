@@ -1,0 +1,27 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Abortion and Gender Intensity of Language Measures}
+\scalebox{0.5}{
+\begin{tabular}{l*{8}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}&\multicolumn{1}{c}{(7)}&\multicolumn{1}{c}{(8)}\\
+                    &\multicolumn{1}{c}{NGII}&\multicolumn{1}{c}{SBII}&\multicolumn{1}{c}{GPII}&\multicolumn{1}{c}{GAII}&\multicolumn{1}{c}{GII0}&\multicolumn{1}{c}{GII1}&\multicolumn{1}{c}{GII2}&\multicolumn{1}{c}{GTroiano}\\
+\midrule
+\multicolumn{9}{l}{\textsc{Panel A: No Interaction}}\\
+Gender Intensity Index&      -0.199** &      -0.255** &      -0.293***&      -0.236*  &      -0.090** &      -0.123** &      -0.118***&      -0.082   \\
+                    &     [0.091]   &     [0.127]   &     [0.108]   &     [0.131]   &     [0.043]   &     [0.055]   &     [0.043]   &     [0.056]   \\
+ln(GDP)             &      -0.064*  &      -0.060   &      -0.056   &      -0.058   &      -0.064   &      -0.060   &      -0.064*  &      -0.007   \\
+                    &     [0.038]   &     [0.039]   &     [0.037]   &     [0.039]   &     [0.040]   &     [0.041]   &     [0.038]   &     [0.043]   \\
+R-squared           &        0.54   &        0.54   &        0.58   &        0.51   &        0.55   &        0.53   &        0.60   &        0.63   \\
+Observations        &        3466   &        3466   &        3498   &        2617   &        2537   &        2617   &        3336   &        2402   \\
+\\ \multicolumn{9}{l}{\textsc{Panel B: GDP Interaction}}\\
+Gender Intensity Index&      -0.607*  &      -0.705*  &      -0.103   &      -0.730   &      -0.132   &      -0.121   &      -0.188   &       0.057   \\
+                    &     [0.359]   &     [0.374]   &     [0.314]   &     [0.552]   &     [0.132]   &     [0.192]   &     [0.129]   &     [0.130]   \\
+GII $\times$ ln(GDP)&       0.051   &       0.058   &      -0.025   &       0.065   &       0.006   &      -0.000   &       0.009   &      -0.017   \\
+                    &     [0.043]   &     [0.048]   &     [0.045]   &     [0.072]   &     [0.018]   &     [0.026]   &     [0.017]   &     [0.017]   \\
+ln(GDP)             &      -0.092** &      -0.100*  &      -0.047   &      -0.106   &      -0.080   &      -0.060   &      -0.079   &       0.033   \\
+                    &     [0.046]   &     [0.051]   &     [0.045]   &     [0.069]   &     [0.068]   &     [0.070]   &     [0.051]   &     [0.072]   \\
+\midrule
+R-squared           &        0.54   &        0.55   &        0.58   &        0.52   &        0.55   &        0.53   &        0.60   &        0.64   \\
+Observations        &        3466   &        3466   &        3498   &        2617   &        2537   &        2617   &        3336   &        2402   \\
+\bottomrule\end{tabular}}\end{table}

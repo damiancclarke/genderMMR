@@ -1,0 +1,21 @@
+\begin{table}[htpb!] 
+ \begin{center} 
+\caption{Descriptive Statistics}
+ \label{TAB:sumstats} 
+\scalebox{0.7}{
+\begin{tabular}{lccccc} 
+ \toprule\toprule \vspace{5mm} 
+& N & Mean & Std. Dev. & Min. & Max. \\ \midrule 
+ \multicolumn{6}{l}{\textbf{Panel B: Gender Measures}}\\ 
+ Women's Economic Rights&        4779&        1.32&        0.70&           0&           3\\
+Women's Political Rights&        4830&        1.79&        0.65&           0&           3\\
+Women's Social Rights&        3395&        1.24&        0.84&           0&           3\\
+Gender Inequality Index&        4558&        2.45&        1.66&           0&           4\\
+Proportion of Women in Parliament&        2801&       14.90&       10.32&           0&          56\\
+Abortion allowed without restrictions&        6207&        0.31&        0.46&           0&           1\\
+Progressive Abortion Reform$\times$100&        6207&        0.24&        4.91&           0&         100\\
+Regressive Abortion Reform$\times$100&        6207&        0.06&        2.54&           0&         100\\
+Desired Sex Ratio   &        2997&        1.12&        0.14&           0&           3\\
+
+ \bottomrule 
+ \end{tabular}}\end{center}\end{table}

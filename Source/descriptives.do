@@ -80,3 +80,36 @@ foreach s in health gender {
     */ cells("count(fmt(0)) mean(fmt(2)) sd(fmt(2)) min(fmt(0)) max(fmt(0))")  /*
     */ replace label 
 }
+
+
+*-------------------------------------------------------------------------------
+*--- (4) Graphs as eps
+*-------------------------------------------------------------------------------
+preserve
+use "$DAT/LangGender_dataset", clear
+replace mideast = 1 if country  == "West Bank and Gaza"
+
+local isos EAS EAP ECS ECA HIC NOC OEC LCN LAC LDC LMY LIC LMC MEA MNA MIC SSA/*
+*/ UMC WLD SAS
+
+label variable le_total     "LE M & F"
+label variable le_male      "LE males"
+label variable le_female    "LE females"
+label variable LE_ratio_F_M "LE ratio (F/M)"
+label variable ln_LE_ratio  "LE ratio (F/M)"
+label variable LE_diff_F_M  "LE difference (F - M)"
+
+foreach c of local isos {
+    sort isocode year
+    #delimit ;
+    twoway (line le_total le_male le_female year if isocode == "`c'", yaxis(1) 
+            lpattern(solid dash shortdash)), scheme(s1color) subtitle("`c'");
+    graph export "$OUT/trends/LExp/`c'Trends.eps", as(eps) replace;
+
+    twoway (line ln_LE_ratio year if isocode == "`c'", yaxis(1) lpattern(dash)) 
+           (line LE_diff_F_M year if isocode == "`c'", yaxis(2) lpattern(solid))
+    , scheme(s1color) subtitle("`c'");
+    graph export "$OUT/trends/LExp/`c'Diff.eps", as(eps) replace;
+    #delimit cr
+}
+restore

@@ -41,11 +41,15 @@ gen DSR       = dsr1_15_25
 gen DSR_gdp   = DSR*lgdp
 gen DSR_gdp_5 = DSR_5*lgdp_5
 gen abortion  = withoutrestrictions
+gen pReform  =  progressive == year if abortion != .
+gen nReform  =  regressive == year if abortion != .
 
 gen abortionLeg     =  1 if progressive == year
 replace abortionLeg = -1 if regressive==year
 replace abortionLeg =  0 if abortion != . & abortionLeg == .
 
+lab var pReform     "Progressive"
+lab var nReform     "Regressive"
 lab var DSR         "Desired Sex Ratio"
 lab var DSR_5       "Desired Sex Ratio"
 lab var DSR_gdp     "Desired Sex Ratio$\times$ ln(GDP)"
@@ -55,9 +59,9 @@ lab var lgdp        "ln(GDP)"
 lab var MMR         "MMR \ \"
 lab var tb          "TB"
 lab var ln_LE_ratio "LE ratio"
-lab var abortion    "Unrestricted Abortion"
-
-
+lab var abortion    "Unrestricted"
+lab var abortionLeg "Legislation"
+/*
 *-------------------------------------------------------------------------------
 *--- (3) Regressions of MMR, LE advantage on DSR 
 *-------------------------------------------------------------------------------
@@ -89,15 +93,20 @@ foreach y of varlist tb ln_LE_ratio MMR abortion abortionLeg {
         local tp 5
         local mes 14.1
     }
+    if `"`y'"'=="ln_LE_ratio" local f 3
     if `"`y'"'=="tb" local Yn TB
     if `"`y'"'=="ln_LE_ratio" {
         local Yn Life expectancy ratio
         local t1 1961
-        local f  3
         local mes 14.8
     }
-    if `"`y'"'=="abortion" local Yn Abortion
-    if `"`y'"'=="abortion" local Yn "Abortion legislation changed"
+    if `"`y'"'=="abortion"    local Yn Abortion
+    if `"`y'"'=="abortion"    local f 3
+    if `"`y'"'=="abortion"    local mes 17.8
+    if `"`y'"'=="abortionLeg" local Yn "Abortion legislation changed"
+    if `"`y'"'=="abortionLeg" local f 3
+    if `"`y'"'=="abortionLeg" local mes 17.8
+
 
     #delimit ;
     esttab est1 est2 est3 est4 est5 using "$OUT/dsr/`y'-DSR.tex",
@@ -171,6 +180,7 @@ foreach y of varlist tb ln_LE_ratio abortion abortionLeg {
     if `"`y'"'=="tb" local Yn "TB"
     if `"`y'"'=="abortion" local Yn "Abortion"
     if `"`y'"'=="abortionLeg" local Yn "Abortion legislation changed"
+
     
     foreach rt of varlist wopol wecon wosoc {
         cap drop `rt'GDP
@@ -339,23 +349,23 @@ local xvars percentage lgdp lpop i.decade i.cont i.wbig pprotest pcatholic /*
 
 foreach y of varlist ln_LE_ratio tb abortion abortionLeg {
 
+    local mes 20.6
     local Yn "Life Expectancy Ratio"
     local note "the log of the ratio of female to male LE times 100,000"
-    local f 1
+    local f 3
+    if `"`y'"'=="ln_LE_ratio" local f 1
     if `"`y'"'=="tb" {
         local Yn "TB"
         local note "TB infection rates (per 100,000) from the WDI database"
-        local f 3
     }
-    if `"`y'"'=="aborton" {
+    if `"`y'"'=="abortion" {
         local Yn "Abortion"
         local note "Abortion allowed in unrestricted circumstances"
-        local f 3
+        local mes 18.8
     }
-    if `"`y'"'=="abortonLeg" {
+    if `"`y'"'=="abortionLeg" {
         local Yn "Abortion legislation changed"
         local note "Abortion legislation changed"
-        local f 3
     }
     
     foreach var of varlist NGII SBII GPII GAII GII0 GII1 GII2 GTroiano {
@@ -383,7 +393,7 @@ foreach y of varlist ln_LE_ratio tb abortion abortionLeg {
     using "$OUT/gii/`y'GII.tex", keep(GII GIIxGDP lgdp) style(tex) booktabs 
     append `estopt' title("`Yn' and Gender Intensity of Language Measures")
     cells(b(star fmt(%-9.`f'f)) se(fmt(%-9.`f'f) par([ ]) )) mtitles
-    postfoot("\bottomrule\multicolumn{9}{p{21.6cm}}{\begin{footnotesize} "
+    postfoot("\bottomrule\multicolumn{9}{p{`mes'cm}}{\begin{footnotesize} "
          "\textsc{Notes:} In each case the dependent variable is `note'. "
          " The GII measures are defined by "
          "Gay et al (2013) and Givati and Troiano (2012).  Particular measures"
@@ -396,4 +406,162 @@ foreach y of varlist ln_LE_ratio tb abortion abortionLeg {
          "country.\end{footnotesize}}\end{tabular}\end{table}");
     #delimit cr
     estimates clear
+}
+
+
+*-------------------------------------------------------------------------------
+*--- (7) MMR on abortion
+*-------------------------------------------------------------------------------
+*/
+lab var withoutrestrictions   "With no restrictions"
+lab var tosafehealthofmother  "For mother's health"
+lab var abortion_allowed      "In at least some cases"
+local se cluster(cncode)
+local ab fe
+
+xtset cncode
+gen abortionXDSR = withoutrestrictions*DSR
+eststo: reg MMR withoutrestrictions                 , `se'
+eststo: xtreg MMR withoutrestrictions               , `se' `ab'
+eststo: xtreg MMR withoutrestrictions abortionX lgdp DSR, `se' `ab'
+drop abortionXDSR
+gen abortionXDSR = tosafehealth*DSR
+eststo: reg MMR tosafehealthofmother                 , `se'
+eststo: xtreg MMR tosafehealthofmother               , `se' `ab'
+eststo: xtreg MMR tosafehealthofmother abortionX lgdp DSR, `se' `ab'
+drop abortionXDSR
+gen abortionXDSR = abortion_allowed*DSR
+eststo: reg MMR abortion_allowed                 , `se'
+eststo: xtreg MMR abortion_allowed               , `se' `ab'
+eststo: xtreg MMR abortion_allowed lgdp abortionX DSR, `se' `ab'
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9
+using "$OUT/abortionMMR.tex", keep(with* tos* abor* DSR) style(tex)
+booktabs replace `estopt' title("MMR and Abortion Legislation")
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles
+postfoot("\bottomrule\multicolumn{9}{p{18cm}}{\begin{footnotesize} "
+         "\textsc{Notes:} Standard errors are clustered by "
+         "country.\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+estimates clear
+    
+
+
+exit
+*-------------------------------------------------------------------------------
+*--- (8) Abortion probits
+*-------------------------------------------------------------------------------
+cap drop democ_gdp
+gen democ_gdp = democ*lgdp
+
+foreach y of varlist abortion {
+    if `"`y'"'== "abortion" local Yn "Unrestricted abortion"
+    if `"`y'"'== "pReform"  local Yn "Progressive abortion reform"
+    if `"`y'"'== "nReform"  local Yn "Regressive abortion reform"
+
+    ***WOMEN'S RIGHTS
+    foreach rt of varlist wopol wecon wosoc {
+        cap drop `rt'GDP
+        gen `rt'GDP = `rt'*lgdp
+        qui areg `y' `rt' lgdp democ `rt'GDP democ  _Y*, `ab' `se'
+        local cn if e(sample)
+    
+        probit `y' `rt' lgdp                          i.cncode `cn', `se'
+        estpost margins, dydx(`rt' lgdp)
+        estimates store p2
+
+        probit `y' `rt' lgdp democ                    i.cncode `cn', `se'
+        estpost margins, dydx(`rt' lgdp democ)
+        estimates store p3
+
+        probit `y' `rt' lgdp       `rt'GDP            i.cncode `cn', `se'
+        estpost margins, dydx(`rt' lgdp `rt'GDP)
+        estimates store p4
+        
+        probit `y' `rt' lgdp democ `rt'GDP            i.cncode `cn', `se'
+        estpost margins, dydx(`rt' lgdp democ `rt'GDP)
+        estimates store p5
+
+        probit `y' `rt' lgdp democ `rt'GDP democ_gdp  i.cncode `cn', `se'
+        estpost margins, dydx(`rt' lgdp democ `rt'GDP democ_gdp)
+        estimates store p6
+    
+        #delimit ;
+        esttab p2 p3 p4 p5 p6 using "$OUT/rights/Probit`y'-`rt'.tex",
+        replace `estopt' title("`Yn' and Women's Rights")
+        cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) 
+        keep(`rt') style(tex) booktabs mlabels(, depvar)
+        postfoot("\midrule Year FE&&Y&Y&Y&Y\\ Democracy controls &&Y&&Y&Y\\ "
+                 "Rights$\times$ GDP &&&&Y&Y\\ Democracy$\times$ GDP &&&&&Y\\"
+                 "\bottomrule\end{tabular}\end{table}");
+        #delimit cr
+        estimates clear
+    }
+}
+exit
+    ***POLITICAL PARTICIPATION
+    qui areg `y' womparl lgdp democ womparlGDP democ_gdp  _Y*, `ab' `se'
+    local cn if e(sample)
+    
+    eststo: areg `y' womparl lgdp                                 `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp                             _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp democ                       _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp       womparlGDP            _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp democ womparlGDP            _Y* `cn',`ab'`se'
+    eststo: areg `y' womparl lgdp democ womparlGDP democ_gdp  _Y* `cn',`ab'`se'
+    
+    #delimit ;
+    esttab est1 est2 est3 est4 est5 est6 using "$OUT/rights/`y'-WP.tex",
+    replace `estopt' title("`Yn' and Women's Representation in Parliament")
+    cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mlabels(, depvar)
+    keep(womparl lgdp democ womparlGDP democ_gdp) style(tex) booktabs 
+    postfoot("\bottomrule\multicolumn{7}{p{14.6cm}}{\begin{footnotesize} "
+             "\textsc{Notes:} Country and year FE are always included. `Yn' "
+             "and political representation data comes from the WDI database."
+             "Standard errors are clustered by "
+             "country.\end{footnotesize}}\end{tabular}\end{table}");
+    #delimit cr
+    estimates clear
+
+    ***GENDER INTENSITY
+    foreach var of varlist NGII SBII GPII GAII GII0 GII1 GII2 GTroiano {
+        cap drop GII GIIxGDP
+        
+        gen GII = `var'
+        gen GIIxGDP = GII*lgdp
+        lab var GII     "Gender Intensity Index"
+        lab var GIIxGDP "GII $\times$ ln(GDP)"
+    
+        reg `y' GII `xvars', `se'
+        estimates store `var'
+
+        reg `y' GII GIIxGDP `xvars', `se'
+        estimates store `var'int    
+    }
+
+    #delimit ;
+    esttab NGII SBII GPII GAII GII0 GII1 GII2 GTroiano
+    using "$OUT/gii/`y'GII.tex", keep(GII lgdp) style(tex) booktabs 
+    replace `estopt' title("`Yn' and Gender Intensity of Language Measures")
+    cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles;
+
+    esttab NGIIint SBIIint GPIIint GAIIint GII0int GII1int GII2int GTroianoint
+    using "$OUT/gii/`y'GII.tex", keep(GII GIIxGDP lgdp) style(tex) booktabs 
+    append `estopt' title("`Yn' and Gender Intensity of Language Measures")
+    cells(b(star fmt(%-9.3f)) se(fmt(%-9.`f'f) par([ ]) )) mtitles
+    postfoot("\bottomrule\multicolumn{9}{p{16cm}}{\begin{footnotesize} "
+         "\textsc{Notes:} In each case the dependent variable is `Yn'. "
+         " The GII measures are defined by "
+         "Gay et al (2013) and Givati and Troiano (2012).  Particular measures"
+         " of the GII are indicated in column headings and described in "
+         "section X.X.  Controls are the log of population, dummies for the "
+         "World Bank Income groups classification, the percentage of "
+         "population that is Protestant, Catholic and Muslim, the proportion "
+         "of the country that is tropical or subtropical, and the percent of "
+         "speakers of the majority language. Standard errors are clustered by "
+         "country.\end{footnotesize}}\end{tabular}\end{table}");
+    #delimit cr
+    estimates clear
+
 }

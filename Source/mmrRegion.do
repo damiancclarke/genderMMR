@@ -129,7 +129,7 @@ if `Fcreate' == 1 {
 
     clear
     append using `fert1' `fert2' `fert3' `fert4' `fert5' `fert6' `fert7'
-    drop b1_92* b2_92* b4_92* b7_92* b1_x* b2_x* b4_x*
+    cap drop b1_92* b2_92* b4_92* b7_92* b1_x* b2_x* b4_x*
 
     bys _cou: gen dcou=_N
     drop if dcou<50
@@ -198,14 +198,14 @@ if `yearGen' == 1 {
 if `yearGen' == 1 {
     use "$OUT/Microbase_fertility_year", clear
 
-    gen age      = yearInterview - yearBirth
+    gen age      = yearInterview - motherYOB
     gen exposure = age - 15
     gen birth    = fertility/exposure
     keep if age>14&age<50
 
     collapse birth, by(`group')    
  
-    merge 1:1 `group' using `MMyears'
+    merge 1:m `group' using `MMyears'
     gen MMR = (MMrate / birth) * 100000
     replace MMrate = MMrate * 1000
     

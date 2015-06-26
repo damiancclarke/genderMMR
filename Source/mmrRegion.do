@@ -36,13 +36,13 @@ local Mcreate 1
 local Fcreate 1
 local yearGen 1
 
-local group _cou v101
+local group _cou region v101
 
 ********************************************************************************
 *** (2) Reshape to form MMR Base (one line per sibling, living or dead)
 ********************************************************************************
 if `Mcreate' == 1 {
-    foreach file in 1 2 3 4 5 6 7 {
+    foreach file in 7 {
         dis "Working on mortality file `file'..."
         tempfile MM`file'
 	
@@ -54,7 +54,8 @@ if `Mcreate' == 1 {
         bys id: gen counter=_n
         tab counter
         drop if counter>1
-
+        decode v101, gen(region)
+        
         foreach var of local MMRv {
             foreach num of numlist 1(1)9 {
                 rename `var'0`num' `var'`num'
@@ -67,7 +68,7 @@ if `Mcreate' == 1 {
 
         save `MM`file''
     }
-
+    
     clear
     append using `MM1' `MM2' `MM3' `MM4' `MM5' `MM6' `MM7'
 
@@ -103,7 +104,7 @@ if `Mcreate' == 1 {
 *** (3) Fertility base (one line per birth)
 ********************************************************************************
 if `Fcreate' == 1 {
-    foreach file in 1 2 3 4 5 6 7 {
+    foreach file in 7 {
         dis "Working on fertility file `file'..."
         tempfile fert`file'
 		
@@ -130,7 +131,8 @@ if `Fcreate' == 1 {
     clear
     append using `fert1' `fert2' `fert3' `fert4' `fert5' `fert6' `fert7'
     cap drop b1_92* b2_92* b4_92* b7_92* b1_x* b2_x* b4_x*
-
+    decode v101, gen(region)
+        
     bys _cou: gen dcou=_N
     drop if dcou<50
 
@@ -214,6 +216,31 @@ if `yearGen' == 1 {
     lab var MMrate "Maternal mortality rate (deaths per 1,000 women)"
     
     lab dat "Unaltered MMR and MMrate by country, region and year"
+    save "$OUT/mmrRegionsYear", replace
+
+    keep if MMR!=.
+    gen nonZeroMMR=year if MMR!=0
+    bys _cou region: egen maxnonZeroMMR=max(nonZeroMMR)
+    bys _cou region: egen minnonZeroMMR=min(nonZeroMMR)
+
+    keep if year>=minnonZeroMMR & year<=maxnonZeroMMR
+    drop minnonZeroMMR maxnonZeroMMR nonZeroMMR
+
+
+    gen years = .
+    local j = 1
+    foreach yy of numlist 1970(5)2010 {
+        local yu = `yy'+5
+        replace years = `j' if year>=`yy'&year<`yu'
+        local ++j
+    }
+    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
+    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
+    lab val years yrs
+    lab var years "5 year period"
+    collapse MMR MMrate birth, by(_cou region v101 years)
+    
+    lab dat "Unaltered MMR and MMrate by country, region and 5 year period"
     save "$OUT/mmrRegions", replace
 }
 

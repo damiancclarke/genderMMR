@@ -8,6 +8,7 @@ mortality ratio by area (country, region).
 
    contact: damian.clarke@economics.ox.ac.uk
 
+** Need to recreate the IR files with a region variable which is directly conve
 */
 
     
@@ -32,9 +33,10 @@ local MMRv mmidx_ mm1_ mm2_ mm3_ mm4_ mm5_ mm6_ mm7_ mm8_ mm9_ mm10_ mm11_
 local IMRv b1_ b2_ b3_ b4_ b7_;
 #delimit cr
 
-local Mcreate 1
-local Fcreate 1
-local yearGen 1
+local Mcreate 0
+local Fcreate 0
+local yearGen 0
+local regionL 1
 
 local group _cou region v101
 
@@ -42,7 +44,7 @@ local group _cou region v101
 *** (2) Reshape to form MMR Base (one line per sibling, living or dead)
 ********************************************************************************
 if `Mcreate' == 1 {
-    foreach file in 7 {
+    foreach file in 1 2 3 4 5 6 7 {
         dis "Working on mortality file `file'..."
         tempfile MM`file'
 	
@@ -104,7 +106,7 @@ if `Mcreate' == 1 {
 *** (3) Fertility base (one line per birth)
 ********************************************************************************
 if `Fcreate' == 1 {
-    foreach file in 7 {
+    foreach file in 1 2 3 4 5 6 7 {
         dis "Working on fertility file `file'..."
         tempfile fert`file'
 		
@@ -244,6 +246,54 @@ if `yearGen' == 1 {
     save "$OUT/mmrRegions", replace
 }
 
+********************************************************************************
+*** (5) Add region labels
+********************************************************************************
+if `regionL' == 1 {
+    #delimit ;
+    local COU Benin Bolivia Brazil Burkina-Faso Burundi Cambodia Cameroon Chad 
+              Congo-Brazzaville Congo-Democratic-Republic Cote-d-Ivoire
+              Dominican-Republic Ethiopia Gabon Indonesia Madagascar Mali
+              Morocco Mozambique Namibia Niger Peru Philippines Rwanda Senegal
+              South-Africa Tanzania Uganda Zimbabwe;
+    local SUR 2012/BJIR61DT 2008/BOIR51DT 1996/BRIR31DT 2010/BFIR61DT
+              2010/BUIR61DT 2010/KHIR61DT 2011/CMIR60DT 2004/TDIR41DT
+              2011/CGIR60DT 2007/CDIR50DT 2012/CIIR61DT 2007/DRIR52DT
+              2011/ETIR61DT 2012/GAIR60DT 2012/IDIR61DT 2008/MDIR51DT
+              2006/MLIR52DT 2003/MAIR43DT 2011/MZIR62DT 2006/NMIR51DT
+              2012/NIIR61DT 2000/PEIR41DT 2008/PHIR52DT 2010/RWIR61DT
+              2010/SNIR60DT 1998/ZAIR31DT 2012/TZIR6ADT 2011/UGIR60DT
+              2010/ZWIR62DT;
+    #delimit cr
+
+    tokenize `SUR'
+    local j = 1
+    foreach country of local COU {
+        dis "`country'"
+        use "$DAT/`country'/``j''.dta"
+        gen n=1
+        collapse n, by(v101)
+        gen _cou = "`country'"
+        decode v101, gen(regionName)
+        keep v101 _cou regionName
+        tempfile f`j'
+        save `f`j''
+        
+        local ++j
+    }
+    dis `j'
+    clear
+    #delimit ;
+    append using `f1' `f2' `f3' `f4' `f5' `f6' `f7' `f8' `f9' `f10' `f11' `f12'
+                 `f13' `f14' `f15' `f16' `f17' `f18' `f19' `f20' `f21' `f22'
+                 `f23' `f24' `f25' `f26' `f27' `f28' `f29';
+    #delimit cr
+    merge 1:m _cou v101 using "$OUT/mmrRegions"
+    drop if _merge == 1
+    drop region _merge
+
+    save "$OUT/mmrRegions", replace
+}
 
 
 ********************************************************************************

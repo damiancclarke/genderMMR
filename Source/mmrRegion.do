@@ -8,7 +8,11 @@ mortality ratio by area (country, region).
 
    contact: damian.clarke@economics.ox.ac.uk
 
-** Need to recreate the IR files with a region variable which is directly conve
+Using the locals "group" and "file" this can be switched to make country by reg-
+ion level data or country level data.  For country, switch country to 1, for re-
+gion, switch country to 0.
+
+
 */
 
     
@@ -229,8 +233,8 @@ if `yearGen' == 1 {
 
     keep if MMR!=.
     gen nonZeroMMR=year if MMR!=0
-    bys _cou region: egen maxnonZeroMMR=max(nonZeroMMR)
-    bys _cou region: egen minnonZeroMMR=min(nonZeroMMR)
+    bys `group': egen maxnonZeroMMR=max(nonZeroMMR)
+    bys `group': egen minnonZeroMMR=min(nonZeroMMR)
 
     keep if year>=minnonZeroMMR & year<=maxnonZeroMMR
     drop minnonZeroMMR maxnonZeroMMR nonZeroMMR
@@ -268,7 +272,7 @@ if `regionL' == 1 {
               2011/CGIR60DT 2007/CDIR50DT 2012/CIIR61DT 2007/DRIR52DT
               2011/ETIR61DT 2012/GAIR60DT 2012/IDIR61DT 2008/MDIR51DT
               2006/MLIR52DT 2003/MAIR43DT 2011/MZIR62DT 2006/NMIR51DT
-              2012/NIIR61DT 2000/PEIR41DT 2008/PHIR52DT 2010/RWIR61DT
+              2012/NIIR61DT 2000/PEIR41DT 2008/PHIR52DT 2005/RWIR53DT
               2010/SNIR60DT 1998/ZAIR31DT 2012/TZIR6ADT 2011/UGIR60DT
               2010/ZWIR62DT;
     #delimit cr

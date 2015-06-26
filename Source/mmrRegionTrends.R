@@ -7,21 +7,29 @@
 
 library(foreign)
 library(lattice)
+library(ggplot2)
 
 DAT <- '/home/damiancclarke/investigacion/2013/WorldMMR/Data/'
 OUT <- '/home/damiancclarke/investigacion/2013/WorldMMR/Results/Graphs/region/'
 
-mmr <- read.dta(paste(DAT,'mmrRegions.dta',sep=""))
-names(mmr) <- c("regCode","country","regName","years","MMR","MMRate","fert")
+#-------------------------------------------------------------------------------
+#--- (1) Regional Plots Function
+#-------------------------------------------------------------------------------
+mmrR <- read.dta(paste(DAT,'mmrRegions.dta',sep=""))
+mmrR <- mmrR[mmrR$MMR<2000,]
+mmrC <- read.dta(paste(DAT,'mmrCountry.dta',sep=""))
 
+names(mmrR) <- c("regCode","country","regName","years","MMR","MMRate","fert")
+names(mmrC) <- c("country","years","MMR","MMRate","fert")
 
 
 countryPlot <- function(country) {
+    trellis.device(device="postscript", color=TRUE)
     postscript(paste(OUT,country,".eps",sep=""),
                horizontal = FALSE, onefile = FALSE, paper = "special",
-               height=7, width=9)
+               height=7, width=9, colormodel="rgb")
 
-    print(xyplot(MMR ~ years | regName, data=mmr[mmr$country==country,],
+    print(xyplot(MMR ~ years | regName, data=mmrR[mmrR$country==country,],
                  xlab="Years",ylab="MMR",main = country,
                  scales = list(x = list(rot = 55)),
                  panel = function(x, y) {
@@ -30,8 +38,19 @@ countryPlot <- function(country) {
                      llines(lowess(x, y))
                  }))
     dev.off()
+
+
+    M <- ggplot(mmrC[mmrC$country==country,], aes(x=years,y=MMR,group=country))+
+        xlab("Years") + ylab("MMR")+geom_point(col=I("red"),alpha=I(.4),size=4)+
+        geom_line() + ggtitle(country)
+    M + theme_bw() + theme(text = element_text(size = 15))
+    ggsave(paste(OUT,country,"All.pdf",sep=""),width=9, height=7)    
+
 }
 
+#-------------------------------------------------------------------------------
+#--- (2) Make plots
+#-------------------------------------------------------------------------------
 countryPlot(country="Benin")
 countryPlot(country="Bolivia")
 countryPlot(country="Brazil")

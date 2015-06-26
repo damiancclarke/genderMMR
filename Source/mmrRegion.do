@@ -35,10 +35,17 @@ local IMRv b1_ b2_ b3_ b4_ b7_;
 
 local Mcreate 0
 local Fcreate 0
-local yearGen 0
-local regionL 1
+local yearGen 1
+local regionL 0
+local country 1
 
 local group _cou region v101
+local file Regions
+
+if `country'==1 {
+    local group _cou
+    local file Country
+}
 
 ********************************************************************************
 *** (2) Reshape to form MMR Base (one line per sibling, living or dead)
@@ -218,7 +225,7 @@ if `yearGen' == 1 {
     lab var MMrate "Maternal mortality rate (deaths per 1,000 women)"
     
     lab dat "Unaltered MMR and MMrate by country, region and year"
-    save "$OUT/mmrRegionsYear", replace
+    save "$OUT/mmr`file'Year", replace
 
     keep if MMR!=.
     gen nonZeroMMR=year if MMR!=0
@@ -240,10 +247,10 @@ if `yearGen' == 1 {
     */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
     lab val years yrs
     lab var years "5 year period"
-    collapse MMR MMrate birth, by(_cou region v101 years)
+    collapse MMR MMrate birth, by(`group' years)
     
     lab dat "Unaltered MMR and MMrate by country, region and 5 year period"
-    save "$OUT/mmrRegions", replace
+    save "$OUT/mmr`file'", replace
 }
 
 ********************************************************************************

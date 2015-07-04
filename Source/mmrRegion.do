@@ -39,11 +39,13 @@ local IMRv b1_ b2_ b3_ b4_ b7_;
 
 local Mcreate 0
 local Fcreate 0
-local yearGen 1
+local Ecreate 1
+local Wcreate 1
+local yearGen 0
 local regionL 0
-local country 1
+local country 0
 
-local group _cou region v101
+local group _cou _year region v101
 local file Regions
 
 if `country'==1 {
@@ -52,7 +54,7 @@ if `country'==1 {
 }
 
 ********************************************************************************
-*** (2) Reshape to form MMR Base (one line per sibling, living or dead)
+*** (2a) Reshape to form MMR Base (one line per sibling, living or dead)
 ********************************************************************************
 if `Mcreate' == 1 {
     foreach file in 1 2 3 4 5 6 7 {
@@ -111,6 +113,67 @@ if `Mcreate' == 1 {
     
     
     save "$OUT/Microbase_MMR_year", replace
+}
+
+********************************************************************************
+*** (2b) Male Recode
+********************************************************************************
+if `Ecreate' == 1 {
+    foreach file in 1 2 3 4 5 6 7 {
+        dis "Working on male recode file `file'..."
+        tempfile Male`file'
+	
+        use "$DAT/World_MR_p`file'", clear
+        count
+        keep _cou _year mv010 mv005 mv101 mv744*
+        replace mv101 = mv101 + 1900 if mv101<100
+        replace mv101 = mv101 - 57  if _cou=="Nepal"
+        replace mv101 = mv101 + 100 if _cou=="Nepal" & mv101<1900
+        
+        gen maleViolence_a = mv744a == 1 if mv744a==0|mv744a==1
+        gen maleViolence_b = mv744b == 1 if mv744b==0|mv744b==1
+        gen maleViolence_c = mv744c == 1 if mv744c==0|mv744c==1
+        gen maleViolence_d = mv744d == 1 if mv744d==0|mv744d==1
+        gen maleViolence_e = mv744e == 1 if mv744e==0|mv744e==1
+
+        keep _cou _year maleViol*
+        save `Male`file''
+    }
+    clear
+    append using `Male1' `Male2' `Male3' `Male4' `Male5' `Male6' `Male7'
+
+            
+    save "$OUT/Microbase_Male_year", replace
+}
+
+********************************************************************************
+*** (2c) female Recode
+********************************************************************************
+if `Wcreate' == 1 {
+    foreach file in 1 2 3 4 5 6 7 {
+        dis "Working on womens recode file `file'..."
+        tempfile Ff`file'
+	
+        use "$DAT/World_IR_p`file'", clear
+        count
+        keep _cou _year v010 v005 v101 v744*
+        replace v101 = v101 + 1900 if v101<100
+        replace v101 = v101 - 57  if _cou=="Nepal"
+        replace v101 = v101 + 100 if _cou=="Nepal" & v101<1900
+        
+        gen femaleViolence_a = v744a == 1 if v744a==0|v744a==1
+        gen femaleViolence_b = v744b == 1 if v744b==0|v744b==1
+        gen femaleViolence_c = v744c == 1 if v744c==0|v744c==1
+        gen femaleViolence_d = v744d == 1 if v744d==0|v744d==1
+        gen femaleViolence_e = v744e == 1 if v744e==0|v744e==1
+
+        keep _cou _year femaleViol*
+        save `Ff`file''
+    }
+    clear
+    append using `Ff1' `Ff2' `Ff3' `Ff4' `Ff5' `Ff6' `Ff7'
+
+    save "$OUT/Microbase_Female_year", replace
 }
 
 ********************************************************************************
@@ -255,6 +318,60 @@ if `yearGen' == 1 {
     
     lab dat "Unaltered MMR and MMrate by country, region and 5 year period"
     save "$OUT/mmr`file'", replace
+}
+
+********************************************************************************
+*** (4b) Collapse violence by year and area
+********************************************************************************
+if `violGen' == 1 {
+    use "$OUT/Microbase_Male_year"
+    collapse maleViolence* [pw=mv005], by(_cou _year mv101 mv010)
+    rename mv010 year
+    rename mv101 v101
+    gen years = .
+    local j = 1
+    foreach yy of numlist 1940(5)1980 {
+        local yu = `yy'+5
+        replace years = `j' if year>=`yy'&year<`yu'
+        local ++j
+    }
+    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
+    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
+    lab val years yrs
+    lab var years "5 year period"
+    collapse maleViolence*, by(years _cou _year v101)
+    
+    tempfile MaleYears
+    save `MaleYears'
+
+
+    use "$OUT/Microbase_Female_year"
+    collapse femaleViolence* [pw=v005], by(_cou _year v101 v010)
+    rename v010 year
+    gen years = .
+    local j = 1
+    foreach yy of numlist 1940(5)1980 {
+        local yu = `yy'+5
+        replace years = `j' if year>=`yy'&year<`yu'
+        local ++j
+    }
+    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
+    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
+    lab val years yrs
+    lab var years "5 year period"
+    collapse femaleViolence*, by(years _cou _year v101)
+    
+    merge 1:1 years _cou _year v101 using "$OUT/mmr`file'"
+    keep if _merge==3|_merge==2
+    gen hasFemaleViolence=_merge==3
+    drop _merge
+
+    merge 1:1 years _cou _year v101 using `MaleYears'
+    keep if _merge==3|_merge==1
+    gen hasMaleViolence=_merge==3
+    drop _merge
+
+    save "$OUT/mmr`file'_DViolence", replace    
 }
 
 ********************************************************************************

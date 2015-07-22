@@ -32,8 +32,8 @@ br   = '\\bottomrule'
 mc1  = '\\multicolumn{'
 mc2  = '}}'
 twid = ['7','7','7','7','7','6']
-tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}','}{p{16.8cm}}',
-        '}{p{16.8cm}}','}{p{15.2cm}}']
+tcm  = ['}{p{16.2cm}}','}{p{13.8cm}}','}{p{16.8cm}}','}{p{18.8cm}}',
+        '}{p{18.8cm}}','}{p{15.2cm}}']
 mc3  = '{\\begin{footnotesize}\\textsc{Notes:} '
 lname = "Fertility$\\times$desire"
 tname = "Twin$\\times$desire"
@@ -151,14 +151,14 @@ He  = open(Health,  'r').readlines()
 Ge  = open(Gender, 'r').readlines()
 
 for i,line in enumerate(He):
-    if i>8 and i<16:
+    if i>8 and i<20:
         line = line.replace('\\hline','\\midrule')
         line = line.replace('(%)','')
         sumT.write(line)
 
 sumT.write(' \n \\multicolumn{6}{l}{\\textbf{Panel B: Gender Measures}}\\\\ \n ')
 for i,line in enumerate(Ge):
-    if i>8 and i<16:
+    if i>8 and i<19:
         line = line.replace('(%)','')
         line = line.replace('\\hline','\\midrule')
         sumT.write(line)
@@ -166,7 +166,10 @@ for i,line in enumerate(Ge):
 sumT.write('\n'+mr+mc1+twid[5]+tcm[5]+mc3+
            "Sample consists of country$\\times$year measures between 1960 and "
            "2013 (with gaps).  Further discussion of coverage is discussed in "
-           "appendix \\ref{app:data}."
+           "appendix \\ref{app:Data}. Mortality measures come from the UN and "
+           "are quinquennial from 1960-2010. Maternal mortality comes from the"
+           " WHO and are quinquennial from 1990 to 2010.                      "
            "\\end{footnotesize}} \\\\ \\bottomrule \n \\end{tabular}\\end{center}"
            "\\end{table}")
 sumT.close()
+

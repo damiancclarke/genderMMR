@@ -97,7 +97,7 @@ for v in ['MMR','tb','ln_LE_ratio','abortion','abortionLeg']:
     "Country fixed effects are included in all cases."  
     +n1[cc]+ 
     "The rights data comes from the Cingranelli, Richards, and Clay data set. "
-    +n2[cc]+ 
+    +n2[cc]+ "\\label{TAB:"+v+"rights}\n"
     "\\end{footnotesize}} \\\\ \\bottomrule \n \\end{tabular}\\end{table}")
 
     rightT.write('\\end{landscape}')
@@ -134,7 +134,7 @@ print 'end'
 
 
 #==============================================================================
-#== (3) Summary
+#== (4) Summary
 #==============================================================================
 Health = RES + 'summary/health.tex'
 Gender = RES + 'summary/gender.tex'
@@ -173,3 +173,46 @@ sumT.write('\n'+mr+mc1+twid[5]+tcm[5]+mc3+
            "\\end{table}")
 sumT.close()
 
+#==============================================================================
+#== (5) Mortality table
+#==============================================================================
+Low  = open(RES + 'mortality/Mortalitylow.tex').readlines()
+Mid  = open(RES + 'mortality/Mortalitymid.tex').readlines()
+High = open(RES + 'mortality/Mortalityhigh.tex').readlines()
+
+MortT = open(TAB + 'mortality.tex', 'w')
+for i1,line1 in enumerate(Low):
+    print str(i1) + line1
+    if i1<15 or i1==16 or i1==17:
+        line1 = line1.replace('\\toprule','\\toprule\\toprule')
+        line1 = line1.replace('\\midrule',
+                              '\\midrule \\multicolumn{7}{l}{\\textsc{Panel A: Low Income}}\\\\')
+        MortT.write(line1)
+
+for i2,line2 in enumerate(Mid):
+    if i2>7 and i2<15 or i2==16 or i2==17:
+        line2 = line2.replace('\\midrule',
+                              '\\midrule \\multicolumn{7}{l}{\\textsc{Panel A: Middle Income}}\\\\')
+        MortT.write(line2)
+
+for i3,line3 in enumerate(High):
+    if i3>7 and i3<15 or i3==16 or i3==17:
+        line3 = line3.replace('\\midrule',
+                              '\\midrule \\multicolumn{7}{l}{\\textsc{Panel A: High Income}}\\\\')
+        MortT.write(line3)
+MortT.write('\\midrule'
+            '\\multicolumn{7}{p{16.2cm}}{\\begin{footnotesize} \\textsc{Notes:} '
+            'All regressions include country and year fixed effects. Standard   '
+            'errors clustered by country are included in parentheses. Mortality '
+            'rates come from the United Nations Population Division (2013) and  '
+            'are available 5 yearly from 1960 to 2005. MMR and IMR data come    '
+            'from the World Bank WDI (based on WHO data). MMR is available for 5'
+            'year time periods from 1990 to 2010 while IMR data is available for'
+            ' 1990, 2000, 2010 and 2012. Odd columns are based on the years 1990'
+            ', 1995, 2000 and 2005, and even columns: the years 1990 and 2000.  '
+            '\\label{TAB:mortality}'
+            '\\end{footnotesize}}\\\\ \\bottomrule\\end{tabular}\\end{table}')
+
+
+ 
+MortT.close()

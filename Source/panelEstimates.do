@@ -47,6 +47,7 @@ gen nReform  =  regressive == year if abortion != .
 gen abortionLeg     =  1 if progressive == year
 replace abortionLeg = -1 if regressive==year
 replace abortionLeg =  0 if abortion != . & abortionLeg == .
+replace imr_ratio_WDI = imr_ratio_WDI*100000
 
 lab var pReform     "Progressive"
 lab var nReform     "Regressive"
@@ -61,7 +62,36 @@ lab var tb          "TB"
 lab var ln_LE_ratio "LE ratio"
 lab var abortion    "Unrestricted"
 lab var abortionLeg "Legislation"
-/*
+lab var imr_ratio_W "IMR (F/M) \ \ \ \ "
+
+*-------------------------------------------------------------------------------
+*--- (3) Excess mortality analysis
+*-------------------------------------------------------------------------------
+gen incLevel = "low" if wb_income_group2 == "Low income"
+replace incLevel = "mid" if wb_income_group2 == "Middle Income"
+replace incLevel = "high" if wb_income_group2 == "High Income"
+	
+foreach inc in "low" "mid" "high" {
+    local cond if incLevel == "`inc'"
+    foreach a in 014 1549 50 {
+        eststo: areg lnratio_FM`a' MMR lgdp_5 i.year `cond', `ab' `se'
+        eststo: areg lnratio_FM`a' MMR lgdp_5 imr_ratio_W i.year `cond', `ab' `se'
+    }
+
+    #delimit ;
+    esttab est1 est2 est3 est4 est5 est6 using "$OUT/mortality/Mortality`inc'.tex",
+    replace cells(b(star fmt(%-9.2f)) se(fmt(%-9.2f) par([ ]) )) collabels(none)
+    label stats (r2 N, fmt(%9.2f %9.0g) label(R-squared Observations)) booktabs
+    starlevel ("*" 0.10 "**" 0.05 "***" 0.01) style(tex)
+    mlabels("Mort F/M" "Mort F/M" "Mort F/M" "Mort F/M" "Mort F/M" "Mort F/M")
+    title("Contributions of IMR and MMR to Excess Female Mortality")
+    keep(MMR lgdp_5 imr_ratio_WDI)
+    mgroups("0-14 Year-olds" "15-49 Year-olds" "50+ Year-olds", pattern(1 0 1 0 1 0)
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(r){@span}));
+    #delimit cr
+    estimates clear
+}
+
 *-------------------------------------------------------------------------------
 *--- (3) Regressions of MMR, LE advantage on DSR 
 *-------------------------------------------------------------------------------
@@ -124,6 +154,7 @@ foreach y of varlist tb ln_LE_ratio MMR abortion abortionLeg {
              "available from the WDI. The mean (sd) of `Yn' and DSR are "
              "`M`y'' (`se`y'') and `MDSR' (`seDSR'). All variables are `tp'"
              "yearly averages. Standard errors are clustered by country."
+             "\label{TAB:`y'DSR}"
              "\end{footnotesize}}\end{tabular}\end{table}");
     #delimit cr
     estimates clear
@@ -412,7 +443,6 @@ foreach y of varlist ln_LE_ratio tb abortion abortionLeg {
 *-------------------------------------------------------------------------------
 *--- (7) MMR on abortion
 *-------------------------------------------------------------------------------
-*/
 lab var withoutrestrictions   "With no restrictions"
 lab var tosafehealthofmother  "For mother's health"
 lab var abortion_allowed      "In at least some cases"
@@ -421,13 +451,15 @@ local ab fe
 
 xtset cncode
 gen abortionXDSR = withoutrestrictions*DSR
-eststo: reg MMR withoutrestrictions                 , `se'
-eststo: xtreg MMR withoutrestrictions               , `se' `ab'
+eststo: reg MMR withoutrestrictions                     , `se'
+eststo: xtreg MMR withoutrestrictions                   , `se' `ab'
+eststo: xtreg MMR withoutrestrictions abortionX      DSR, `se' `ab'
 eststo: xtreg MMR withoutrestrictions abortionX lgdp DSR, `se' `ab'
 drop abortionXDSR
 gen abortionXDSR = tosafehealth*DSR
-eststo: reg MMR tosafehealthofmother                 , `se'
-eststo: xtreg MMR tosafehealthofmother               , `se' `ab'
+eststo: reg MMR tosafehealthofmother                     , `se'
+eststo: xtreg MMR tosafehealthofmother                   , `se' `ab'
+eststo: xtreg MMR tosafehealthofmother abortionX      DSR, `se' `ab'
 eststo: xtreg MMR tosafehealthofmother abortionX lgdp DSR, `se' `ab'
 drop abortionXDSR
 gen abortionXDSR = abortion_allowed*DSR
@@ -435,17 +467,64 @@ eststo: reg MMR abortion_allowed                 , `se'
 eststo: xtreg MMR abortion_allowed               , `se' `ab'
 eststo: xtreg MMR abortion_allowed lgdp abortionX DSR, `se' `ab'
 
+lab var abortionXDSR "Abortion $\times$ DSR"
+
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9
+esttab est1 est2 est3 est4 est5 est6 est7 est8
 using "$OUT/abortionMMR.tex", keep(with* tos* abor* DSR) style(tex)
 booktabs replace `estopt' title("MMR and Abortion Legislation")
-cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) mtitles
-postfoot("\bottomrule\multicolumn{9}{p{18cm}}{\begin{footnotesize} "
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) ))
+mtitles("MMR" "MMR" "MMR" "MMR" "MMR" "MMR" "MMR" "MMR")
+mgroups("Unrestricted Abortion" "Abortion for maternal health",
+        pattern(1 0 0 0 1 0 0 0) prefix(\multicolumn{@span}{c}{) suffix(})
+        span erepeat(\cmidrule(r){@span}))
+postfoot("Country FE&&Y&Y&Y&&Y&Y&Y \\ GDP controls &&&&Y&&&&Y \\"
+         "\bottomrule\multicolumn{9}{p{18cm}}{\begin{footnotesize} "
          "\textsc{Notes:} Standard errors are clustered by "
          "country.\end{footnotesize}}\end{tabular}\end{table}");
 #delimit cr
 estimates clear
     
+gen postMDG = year>2000
+gen abortyear = year if withoutrestrictions == 1
+bys country: egen minabortyear = min(abortyear)
+gen earlyAbort = minabortyear<2000 if withoutrestrictions != .
+gen earlyabortionXpostMDG = earlyAbort*postMDG
+lab var postMDG     "post MDG"
+lab var earlyAbort  "Early Abortion (no restrictions)"
+lab var earlyaborti "Early Abortion $\times$ post MDG"
+
+eststo: reg MMR earlyAbort                          , `se'
+eststo: xtreg MMR postMDG earlyabortionXpostMDG     , `se' `ab'
+eststo: xtreg MMR postMDG earlyabortionXpostMDG lgdp, `se' `ab'
+drop earlyAbort earlyabortionX* abortyear minabortyear
+
+gen abortyear = year if tosafehealth == 1
+bys country: egen minabortyear = min(abortyear)
+gen earlyAbort = minabortyear<2000 if withoutrestrictions != .
+gen earlyabortionXpostMDG = earlyAbort*postMDG
+lab var postMDG     "post MDG"
+lab var earlyAbort  "Early Abortion (to save health)"
+lab var earlyaborti "Early Abortion $\times$ post MDG"
+eststo: reg MMR earlyAbort                                     , `se'
+eststo: xtreg MMR postMDG earlyabortionXpostMDG     , `se' `ab'
+eststo: xtreg MMR postMDG earlyabortionXpostMDG lgdp, `se' `ab'
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6
+using "$OUT/abortionMMR_MDGs.tex", keep(early* postMDG) style(tex)
+booktabs replace `estopt' title("MMR, MDGs and Abortion Legislation")
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) ))
+mtitles("MMR" "MMR" "MMR" "MMR" "MMR" "MMR" "MMR" "MMR")
+mgroups("Unrestricted Abortion" "Abortion for maternal health",
+        pattern(1 0 0 1 0 0) prefix(\multicolumn{@span}{c}{) suffix(})
+        span erepeat(\cmidrule(r){@span}))
+postfoot("Country FE&&Y&Y&&Y&Y \\ GDP controls &&&Y&&&Y \\"
+         "\bottomrule\multicolumn{7}{p{18cm}}{\begin{footnotesize} "
+         "\textsc{Notes:} Standard errors are clustered by "
+         "country.\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+estimates clear
 
 
 exit

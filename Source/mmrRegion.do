@@ -39,9 +39,9 @@ local IMRv b1_ b2_ b3_ b4_ b7_;
 
 local Mcreate 0
 local Fcreate 0
-local Ecreate 1
-local Wcreate 1
-local yearGen 0
+local Ecreate 0
+local Wcreate 0
+local yearGen 1
 local regionL 0
 local country 0
 
@@ -269,7 +269,7 @@ if `yearGen' == 1 {
 
     save `MMyears'
 }
-
+exit
 ********************************************************************************
 *** (4b) Collapse births by year and number of women exposed
 ********************************************************************************
@@ -281,9 +281,12 @@ if `yearGen' == 1 {
     gen birth    = fertility/exposure
     keep if age>14&age<50
 
-    collapse birth, by(`group')    
+    collapse birth, by(_cou v101 _year)    
  
     merge 1:m `group' using `MMyears'
+    keep if _merge==3
+    drop _merge
+    
     gen MMR = (MMrate / birth) * 100000
     replace MMrate = MMrate * 1000
     
@@ -314,7 +317,7 @@ if `yearGen' == 1 {
     */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
     lab val years yrs
     lab var years "5 year period"
-    collapse MMR MMrate birth, by(`group' years)
+    collapse MMR MMrate birth, by(_cou _year v101 years)
     
     lab dat "Unaltered MMR and MMrate by country, region and 5 year period"
     save "$OUT/mmr`file'", replace
@@ -379,12 +382,112 @@ if `violGen' == 1 {
 ********************************************************************************
 if `regionL' == 1 {
     #delimit ;
-    local COU Benin Bolivia Brazil Burkina-Faso Burundi Cambodia Cameroon Chad 
-              Congo-Brazzaville Congo-Democratic-Republic Cote-d-Ivoire
-              Dominican-Republic Ethiopia Gabon Indonesia Madagascar Mali
-              Morocco Mozambique Namibia Niger Peru Philippines Rwanda Senegal
-              South-Africa Tanzania Uganda Zimbabwe;
-    local SUR 2012/BJIR61DT 2008/BOIR51DT 1996/BRIR31DT 2010/BFIR61DT
+    local COU Benin                      1996
+              Benin                      2006
+              Bolivia                    1994
+              Bolivia                    2003
+              Bolivia                    2008
+              Brazil                     1996
+              Burkina-Faso               1999
+              Burkina-Faso               2003
+              Burkina-Faso               2010
+              Burundi                    2010
+              Cambodia                   2000
+              Cambodia                   2005
+              Cambodia                   2010
+              Cameroon                   1998
+              Cameroon                   2004
+              Cameroon                   2011
+              Cameroon                   1998
+              Central-African-Republic   1994    
+              Chad                       1997
+              Chad                       2004
+              Congo-Brazzaville          2005
+              Congo-Brazzaville          2011
+              Congo-Democratic-Republic  2007
+              Cote-d-Ivoire              1994
+              Cote-d-Ivoire              2005
+              Cote-d-Ivoire              2012
+              Dominican-Republic         2002
+              Dominican-Republic         2007
+              Ethiopia                   2000
+              Ethiopia                   2005
+              Ethiopia                   2011
+              Gabon                      2000
+              Gabon                      2012
+              Guatemala                  1995
+              Guinea                     1999
+              Guinea                     2005
+              Haiti                      2000
+              Haiti                      2006 
+              Indonesia                  1994
+              Indonesia                  1997
+              Indonesia                  2003
+              Indonesia                  2007
+              Indonesia                  2012
+              Jordan                     1997
+              Kenya                      1998
+              Kenya                      2008
+              Lesotho                    2004
+              Lesotho                    2009
+              Liberia                    2007
+              Madagascar                 1992
+              Madagascar                 1997
+              Madagascar                 2004
+              Madagascar                 2008
+              Malawi                     1992
+              Malawi                     2000
+              Malawi                     2004
+              Malawi                     2010
+              Mali                       1996
+              Mali                       2001
+              Mali                       2006
+              Morocco                    1992
+              Morocco                    2003
+              Mozambique                 1997
+              Mozambique                 2003
+              Mozambique                 2011
+              Namibia                    1992
+              Namibia                    2000
+              Namibia                    2006
+              Nepal                      1996    
+              Nepal                      2006    
+              Nepal                      1996    
+              Niger                      1992
+              Niger                      2006
+              Nigeria                    1999
+              Nigeria                    2008
+              Peru                       1992
+              Peru                       1996
+              Peru                       2000
+              Philippines                1993
+              Philippines                1998
+              Rwanda                     2000
+              Rwanda                     2005
+              Rwanda                     2010
+              Sao-Tome-and-Principe      2008
+              Senegal                    1993
+              Senegal                    2005
+              Senegal                    2010    
+              Sierra-Leone               2008
+              South-Africa               1998
+              Swaziland                  2006
+              Tanzania                   1996
+              Tanzania                   2004
+              Tanzania                   2010
+              Togo                       1998             
+              Uganda                     1995
+              Uganda                     2000
+              Uganda                     2006
+              Uganda                     2011
+              Zambia                     1996
+              Zambia                     2002
+              Zambia                     2007
+              Zimbabwe                   1994
+              Zimbabwe                   1999
+              Zimbabwe                   2005
+              Zimbabwe                   2010;
+    local SUR 1996/BJIR61DT 2008/BOIR51DT 1996/BRIR31DT 2010/BFIR61DT
               2010/BUIR61DT 2010/KHIR61DT 2011/CMIR60DT 2004/TDIR41DT
               2011/CGIR60DT 2007/CDIR50DT 2012/CIIR61DT 2007/DRIR52DT
               2011/ETIR61DT 2012/GAIR60DT 2012/IDIR61DT 2008/MDIR51DT

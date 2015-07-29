@@ -40,10 +40,11 @@ local IMRv b1_ b2_ b3_ b4_ b7_;
 local Mcreate 0
 local Fcreate 0
 local Ecreate 0
-local Wcreate 0
-local yearGen 1
-local regionL 0
+local Wcreate 1
+local yearGen 0
+local regionL 1
 local country 0
+local violGen 1
 
 local group _cou _year region v101
 local file Regions
@@ -126,9 +127,9 @@ if `Ecreate' == 1 {
         use "$DAT/World_MR_p`file'", clear
         count
         keep _cou _year mv010 mv005 mv101 mv744*
-        replace mv101 = mv101 + 1900 if mv101<100
-        replace mv101 = mv101 - 57  if _cou=="Nepal"
-        replace mv101 = mv101 + 100 if _cou=="Nepal" & mv101<1900
+        replace mv010 = mv010 + 1900 if mv010<100
+        replace mv010 = mv010 - 57  if _cou=="Nepal"
+        replace mv010 = mv010 + 100 if _cou=="Nepal" & mv010<1900
         
         gen maleViolence_a = mv744a == 1 if mv744a==0|mv744a==1
         gen maleViolence_b = mv744b == 1 if mv744b==0|mv744b==1
@@ -156,10 +157,11 @@ if `Wcreate' == 1 {
 	
         use "$DAT/World_IR_p`file'", clear
         count
-        keep _cou _year v010 v005 v101 v744*
-        replace v101 = v101 + 1900 if v101<100
-        replace v101 = v101 - 57  if _cou=="Nepal"
-        replace v101 = v101 + 100 if _cou=="Nepal" & v101<1900
+        keep _cou _year v010 v005 v101 v744* v133
+        replace v010 = v010 + 1900 if v010<100
+        replace v010 = v010 - 57  if _cou=="Nepal"
+        replace v010 = v001 + 100 if _cou=="Nepal" & v010<1900
+        rename v010 birthYear
         
         gen femaleViolence_a = v744a == 1 if v744a==0|v744a==1
         gen femaleViolence_b = v744b == 1 if v744b==0|v744b==1
@@ -167,7 +169,8 @@ if `Wcreate' == 1 {
         gen femaleViolence_d = v744d == 1 if v744d==0|v744d==1
         gen femaleViolence_e = v744e == 1 if v744e==0|v744e==1
 
-        keep _cou _year femaleViol*
+        gen femaleEducation = v133 if v133<=25
+        keep _cou _year femaleViol* femaleEducation v101 v005 birthYear
         save `Ff`file''
     }
     clear
@@ -265,11 +268,10 @@ if `yearGen' == 1 {
     }
     clear
     append using `allfiles'
-    tempfile MMyears
 
-    save `MMyears'
+    save "$OUT/MMyears"
 }
-exit
+
 ********************************************************************************
 *** (4b) Collapse births by year and number of women exposed
 ********************************************************************************
@@ -283,7 +285,7 @@ if `yearGen' == 1 {
 
     collapse birth, by(_cou v101 _year)    
  
-    merge 1:m `group' using `MMyears'
+    merge 1:m _cou v101 _year using "$OUT/MMyears"
     keep if _merge==3
     drop _merge
     
@@ -324,60 +326,6 @@ if `yearGen' == 1 {
 }
 
 ********************************************************************************
-*** (4b) Collapse violence by year and area
-********************************************************************************
-if `violGen' == 1 {
-    use "$OUT/Microbase_Male_year"
-    collapse maleViolence* [pw=mv005], by(_cou _year mv101 mv010)
-    rename mv010 year
-    rename mv101 v101
-    gen years = .
-    local j = 1
-    foreach yy of numlist 1940(5)1980 {
-        local yu = `yy'+5
-        replace years = `j' if year>=`yy'&year<`yu'
-        local ++j
-    }
-    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
-    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
-    lab val years yrs
-    lab var years "5 year period"
-    collapse maleViolence*, by(years _cou _year v101)
-    
-    tempfile MaleYears
-    save `MaleYears'
-
-
-    use "$OUT/Microbase_Female_year"
-    collapse femaleViolence* [pw=v005], by(_cou _year v101 v010)
-    rename v010 year
-    gen years = .
-    local j = 1
-    foreach yy of numlist 1940(5)1980 {
-        local yu = `yy'+5
-        replace years = `j' if year>=`yy'&year<`yu'
-        local ++j
-    }
-    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
-    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
-    lab val years yrs
-    lab var years "5 year period"
-    collapse femaleViolence*, by(years _cou _year v101)
-    
-    merge 1:1 years _cou _year v101 using "$OUT/mmr`file'"
-    keep if _merge==3|_merge==2
-    gen hasFemaleViolence=_merge==3
-    drop _merge
-
-    merge 1:1 years _cou _year v101 using `MaleYears'
-    keep if _merge==3|_merge==1
-    gen hasMaleViolence=_merge==3
-    drop _merge
-
-    save "$OUT/mmr`file'_DViolence", replace    
-}
-
-********************************************************************************
 *** (5) Add region labels
 ********************************************************************************
 if `regionL' == 1 {
@@ -398,7 +346,6 @@ if `regionL' == 1 {
               Cameroon                   1998
               Cameroon                   2004
               Cameroon                   2011
-              Cameroon                   1998
               Central-African-Republic   1994    
               Chad                       1997
               Chad                       2004
@@ -487,29 +434,38 @@ if `regionL' == 1 {
               Zimbabwe                   1999
               Zimbabwe                   2005
               Zimbabwe                   2010;
-    local SUR 1996/BJIR61DT 2008/BOIR51DT 1996/BRIR31DT 2010/BFIR61DT
-              2010/BUIR61DT 2010/KHIR61DT 2011/CMIR60DT 2004/TDIR41DT
-              2011/CGIR60DT 2007/CDIR50DT 2012/CIIR61DT 2007/DRIR52DT
-              2011/ETIR61DT 2012/GAIR60DT 2012/IDIR61DT 2008/MDIR51DT
-              2006/MLIR52DT 2003/MAIR43DT 2011/MZIR62DT 2006/NMIR51DT
-              2012/NIIR61DT 2000/PEIR41DT 2008/PHIR52DT 2005/RWIR53DT
-              2010/SNIR60DT 1998/ZAIR31DT 2012/TZIR6ADT 2011/UGIR60DT
-              2010/ZWIR62DT;
+    local SUR BJIR31DT BJIR51DT BOIR31DT BOIR41DT BOIR51DT BRIR31DT BFIR31DT
+     BFIR43DT BFIR61DT BUIR61DT KHIR42DT KHIR51DT KHIR61DT CMIR31DT CMIR44DT
+     CMIR60DT CFIR31DT TDIR31DT TDIR41DT CGIR51DT CGIR60DT CDIR50DT CIIR35DT
+     CIIR50DT CIIR61DT DRIR4ADT DRIR52DT ETIR41DT ETIR51DT ETIR61DT GAIR41DT
+     GAIR60DT GUIR34DT GNIR41DT GNIR52DT HTIR42DT HTIR52DT IDIR31DT IDIR3ADT
+     IDIR42DT IDIR51DT IDIR61DT JOIR31DT KEIR3ADT KEIR52DT LSIR41DT LSIR60DT
+     LBIR51DT MDIR21DT MDIR31DT MDIR41DT MDIR51DT MWIR22DT MWIR41DT MWIR4DDT
+     MWIR61DT MLIR32DT MLIR41DT MLIR52DT MAIR21DT MAIR43DT MZIR31DT MZIR41DT
+     MZIR62DT NMIR21DT NMIR41DT NMIR51DT NPIR31DT NPIR51DT NPIR31DT NIIR22DT 
+     NIIR51DT NGIR41DT NGIR52DT PEIR21DT PEIR31DT PEIR41DT PHIR31DT PHIR3ADT 
+     RWIR41DT RWIR53DT RWIR61DT STIR50DT SNIR21DT SNIR4HDT SNIR60DT SLIR51DT 
+     ZAIR31DT SZIR51DT TZIR3ADT TZIR4IDT TZIR62DT TGIR31DT UGIR33DT UGIR41DT 
+     UGIR52DT UGIR60DT ZMIR31DT ZMIR42DT ZMIR51DT ZWIR31DT ZWIR42DT ZWIR51DT 
+     ZWIR62DT;    
     #delimit cr
 
-    tokenize `SUR'
+    tokenize `COU'
     local j = 1
-    foreach country of local COU {
-        dis "`country'"
-        use "$DAT/`country'/``j''.dta"
+    foreach survey of local SUR {
+        dis "country: `1', year: `2', survey: `survey'"
+        use "$DAT/`1'/`2'/`survey'.dta"
         gen n=1
         collapse n, by(v101)
-        gen _cou = "`country'"
+        gen _cou = "`1'"
         decode v101, gen(regionName)
         keep v101 _cou regionName
+        gen _year = "`2'"
         tempfile f`j'
         save `f`j''
         
+        macro shift
+        macro shift
         local ++j
     }
     dis `j'
@@ -517,13 +473,83 @@ if `regionL' == 1 {
     #delimit ;
     append using `f1' `f2' `f3' `f4' `f5' `f6' `f7' `f8' `f9' `f10' `f11' `f12'
                  `f13' `f14' `f15' `f16' `f17' `f18' `f19' `f20' `f21' `f22'
-                 `f23' `f24' `f25' `f26' `f27' `f28' `f29';
+                 `f23' `f24' `f25' `f26' `f27' `f28' `f29' `f30' `f31' `f32'
+                 `f33' `f34' `f35' `f36' `f37' `f38' `f39' `f40' `f41' `f42'
+                 `f43' `f44' `f45' `f46' `f47' `f48' `f49' `f50' `f51' `f52'
+                 `f53' `f54' `f55' `f56' `f57' `f58' `f59' `f60' `f61' `f62'
+                 `f63' `f64' `f65' `f66' `f67' `f68' `f69' `f70' `f71' `f72'
+                 `f73' `f74' `f75' `f76' `f77' `f78' `f79' `f80' `f81' `f82'
+                 `f83' `f84' `f85' `f86' `f87' `f88' `f89' `f90' `f91' `f92'
+                 `f93' `f94' `f95' `f96' `f97' `f98' `f99' `f100' `f101' `f102'
+                 `f103' `f104';
     #delimit cr
-    merge 1:m _cou v101 using "$OUT/mmrRegions"
+    bys v101 _cou _year: gen n=_n
+    drop if n==2
+    drop n
+    merge 1:m _cou _year v101 using "$OUT/mmrRegions"
     drop if _merge == 1
-    drop region _merge
+    drop _merge
 
     save "$OUT/mmrRegions", replace
+}
+
+
+********************************************************************************
+*** (6) Merge covariates
+********************************************************************************
+if `violGen' == 1 {
+    /*
+    use "$OUT/Microbase_Male_year"
+    collapse maleViolence* [pw=mv005], by(_cou _year mv101 mv010)
+    rename mv010 year
+    rename mv101 v101
+    gen years = .
+    local j = 1
+    foreach yy of numlist 1940(5)1980 {
+        local yu = `yy'+5
+        replace years = `j' if year>=`yy'&year<`yu'
+        local ++j
+    }
+    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
+    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
+    lab val years yrs
+    lab var years "5 year period"
+    collapse maleViolence*, by(years _cou _year v101)
+    
+    tempfile MaleYears
+    save `MaleYears'
+    */
+
+    use "$OUT/Microbase_Female_year"
+    collapse femaleViolence* femaleEduc [pw=v005], by(_cou _year v101 birthYear)
+    rename birthYear year
+    gen years = .
+    local j = 1
+    foreach yy of numlist 1940(5)1980 {
+        local yu = `yy'+5
+        replace years = `j' if year>=`yy'&year<`yu'
+        local ++j
+    }
+    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
+    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
+    lab val years yrs
+    lab var years "5 year period"
+    collapse femaleEduc, by(years _cou _year v101)
+    
+    merge 1:1 years _cou _year v101 using "$OUT/mmr`file'"
+    keep if _merge==3|_merge==2
+    gen hasFemaleEduc=_merge==3
+    drop _merge
+
+    /*
+    merge 1:1 years _cou _year v101 using `MaleYears'
+    keep if _merge==3|_merge==1
+    gen hasMaleViolence=_merge==3
+    drop _merge
+
+    save "$OUT/mmr`file'_DViolence", replace
+    */
+    save "$OUT/mmrRegions_covars"    
 }
 
 

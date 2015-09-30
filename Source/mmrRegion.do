@@ -39,12 +39,12 @@ local IMRv b1_ b2_ b3_ b4_ b7_;
 
 local Mcreate 0
 local Fcreate 0
-local Ecreate 0
+local Ecreate 1
 local Wcreate 1
 local yearGen 0
-local regionL 1
+local regionL 0
 local country 0
-local violGen 1
+local violGen 0
 
 local group _cou _year region v101
 local file Regions
@@ -126,7 +126,6 @@ if `Ecreate' == 1 {
 	
         use "$DAT/World_MR_p`file'", clear
         count
-        keep _cou _year mv010 mv005 mv101 mv744*
         replace mv010 = mv010 + 1900 if mv010<100
         replace mv010 = mv010 - 57  if _cou=="Nepal"
         replace mv010 = mv010 + 100 if _cou=="Nepal" & mv010<1900
@@ -136,8 +135,9 @@ if `Ecreate' == 1 {
         gen maleViolence_c = mv744c == 1 if mv744c==0|mv744c==1
         gen maleViolence_d = mv744d == 1 if mv744d==0|mv744d==1
         gen maleViolence_e = mv744e == 1 if mv744e==0|mv744e==1
-
-        keep _cou _year maleViol*
+        
+        gen maleEducation = mv133 if mv133<=25&mv012>=15&mv012<50
+        keep _cou _year maleViol* maleEducation mv024 mv101 mv005
         save `Male`file''
     }
     clear
@@ -157,10 +157,10 @@ if `Wcreate' == 1 {
 	
         use "$DAT/World_IR_p`file'", clear
         count
-        keep _cou _year v010 v005 v101 v744* v133
+        keep _cou _year v010 v005 v101 v744* v133 v130 v190 v102
         replace v010 = v010 + 1900 if v010<100
         replace v010 = v010 - 57  if _cou=="Nepal"
-        replace v010 = v001 + 100 if _cou=="Nepal" & v010<1900
+        replace v010 = v010 + 100 if _cou=="Nepal" & v010<1900
         rename v010 birthYear
         
         gen femaleViolence_a = v744a == 1 if v744a==0|v744a==1
@@ -170,7 +170,16 @@ if `Wcreate' == 1 {
         gen femaleViolence_e = v744e == 1 if v744e==0|v744e==1
 
         gen femaleEducation = v133 if v133<=25
-        keep _cou _year femaleViol* femaleEducation v101 v005 birthYear
+        gen wealth     = v190      if v190!=.
+        gen wealthInd1 = v190 == 1 if v190!=.
+        gen wealthInd2 = v190 == 2 if v190!=.
+        gen wealthInd3 = v190 == 3 if v190!=.
+        gen wealthInd4 = v190 == 4 if v190!=.
+        gen wealthInd5 = v190 == 5 if v190!=.
+        decode v130, gen(religion)
+        gen urban      = v102 == 1
+        drop v102 v190 v133 v130
+        
         save `Ff`file''
     }
     clear
@@ -525,7 +534,7 @@ if `violGen' == 1 {
     rename birthYear year
     gen years = .
     local j = 1
-    foreach yy of numlist 1940(5)1980 {
+    foreach yy of numlist 1945(5)1985 {
         local yu = `yy'+5
         replace years = `j' if year>=`yy'&year<`yu'
         local ++j
@@ -534,9 +543,10 @@ if `violGen' == 1 {
     */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
     lab val years yrs
     lab var years "5 year period"
+    drop if years==.
     collapse femaleEduc, by(years _cou _year v101)
     
-    merge 1:1 years _cou _year v101 using "$OUT/mmr`file'"
+    merge 1:1 years _cou _year v101 using "$OUT/mmrRegions"
     keep if _merge==3|_merge==2
     gen hasFemaleEduc=_merge==3
     drop _merge

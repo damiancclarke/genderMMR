@@ -37,14 +37,15 @@ local MMRv mmidx_ mm1_ mm2_ mm3_ mm4_ mm5_ mm6_ mm7_ mm8_ mm9_ mm10_ mm11_
 local IMRv b1_ b2_ b3_ b4_ b7_;
 #delimit cr
 
-local Mcreate 0
-local Fcreate 0
-local Ecreate 1
-local Wcreate 1
-local yearGen 0
-local regionL 0
-local country 0
-local violGen 0
+local Mcreate  0
+local Fcreate  0
+local Ecreate  0
+local Wcreate  0
+local yearGen  0
+local regionL  0
+local country  0
+local covarGen 1
+local afroBar  1
 
 local group _cou _year region v101
 local file Regions
@@ -176,7 +177,7 @@ if `Wcreate' == 1 {
         gen wealthInd3 = v190 == 3 if v190!=.
         gen wealthInd4 = v190 == 4 if v190!=.
         gen wealthInd5 = v190 == 5 if v190!=.
-        decode v130, gen(religion)
+        gen religion   = v130
         gen urban      = v102 == 1
         drop v102 v190 v133 v130
         
@@ -506,63 +507,67 @@ if `regionL' == 1 {
 ********************************************************************************
 *** (6) Merge covariates
 ********************************************************************************
-if `violGen' == 1 {
-    /*
+if `covarGen' == 1 {
     use "$OUT/Microbase_Male_year"
-    collapse maleViolence* [pw=mv005], by(_cou _year mv101 mv010)
-    rename mv010 year
+    collapse maleViolence* maleEduc* [pw=mv005], by(_cou _year mv101)
+
+    lab var maleViolence_a "Wife beating justified if goes out without telling"
+    lab var maleViolence_b "Wife beating justified if neglects children"
+    lab var maleViolence_c "Wife beating justified if she argues with him"
+    lab var maleViolence_d "Wife beating justified if she refuses sex"
+    lab var maleViolence_e "Wife beating justified if she burns food"
+    lab var maleEducation  "Average Male Education (years)"
     rename mv101 v101
-    gen years = .
-    local j = 1
-    foreach yy of numlist 1940(5)1980 {
-        local yu = `yy'+5
-        replace years = `j' if year>=`yy'&year<`yu'
-        local ++j
-    }
-    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
-    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
-    lab val years yrs
-    lab var years "5 year period"
-    collapse maleViolence*, by(years _cou _year v101)
     
     tempfile MaleYears
     save `MaleYears'
-    */
 
     use "$OUT/Microbase_Female_year"
-    collapse femaleViolence* femaleEduc [pw=v005], by(_cou _year v101 birthYear)
-    rename birthYear year
-    gen years = .
-    local j = 1
-    foreach yy of numlist 1945(5)1985 {
-        local yu = `yy'+5
-        replace years = `j' if year>=`yy'&year<`yu'
-        local ++j
-    }
-    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
-    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
-    lab val years yrs
-    lab var years "5 year period"
-    drop if years==.
-    collapse femaleEduc, by(years _cou _year v101)
+    collapse female* wealth* urban [pw=v005], by(_cou _year v101)
+
+    lab var femaleViolence_a "Wife beating justified if goes out without telling"
+    lab var femaleViolence_b "Wife beating justified if neglects children"
+    lab var femaleViolence_c "Wife beating justified if she argues with him"
+    lab var femaleViolence_d "Wife beating justified if she refuses sex"
+    lab var femaleViolence_e "Wife beating justified if she burns food"
+    lab var femaleEducation  "Average Female Education (years)"
+    lab var wealth           "Average wealth index"
+    lab var wealthInd1       "Proportion in wealth quintile 1"
+    lab var wealthInd2       "Proportion in wealth quintile 2"
+    lab var wealthInd3       "Proportion in wealth quintile 3"
+    lab var wealthInd4       "Proportion in wealth quintile 4"
+    lab var wealthInd5       "Proportion in wealth quintile 5"
+
+    merge 1:1 _cou _year v101 using `MaleYears'
+    drop _merge
+
+    merge 1:m _cou _year v101 using "$OUT/mmrRegions"
+    keep if _merge==3
+    drop _merge
     
-    merge 1:1 years _cou _year v101 using "$OUT/mmrRegions"
-    keep if _merge==3|_merge==2
-    gen hasFemaleEduc=_merge==3
-    drop _merge
-
-    /*
-    merge 1:1 years _cou _year v101 using `MaleYears'
-    keep if _merge==3|_merge==1
-    gen hasMaleViolence=_merge==3
-    drop _merge
-
-    save "$OUT/mmr`file'_DViolence", replace
-    */
-    save "$OUT/mmrRegions_covars"    
+    save "$OUT/mmrRegions_covars", replace
 }
 
+********************************************************************************
+*** (7) Indicate if Afrobarometer Country
+********************************************************************************
+#delimit ;
+local cc Gabon Benin Burkina-Faso Burundi Cameroon Cote-d-Ivoire Kenya Liberia
+         Lesotho Guinea Ethiopia Morocco Mozambique Swaziland Namibia Tanzania
+         Niger Togo Nigeria Madagascar Senegal Uganda Malawi Sierra-Leone Mali
+         Zambia South-Africa Zimbabwe;
+#delimit cr
 
+if `afroBar'==1 {
+    use "$OUT/mmrRegions_covars"
+    cap gen afroBarometer = 0
+    foreach cname of local cc {
+        replace afroBarometer = 1 if _cou=="`cname'"
+    }
+    lab dat "DHS Regional Measures: MMR; Education, Wealth"
+    save "$OUT/mmrRegions_covars", replace
+}
+   
 ********************************************************************************
 *** (X) Close file
 ********************************************************************************

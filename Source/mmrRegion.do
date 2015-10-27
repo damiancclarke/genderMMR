@@ -179,7 +179,7 @@ if `Wcreate' == 1 {
         gen wealthInd5 = v190 == 5 if v190!=.
         gen religion   = v130
         gen urban      = v102 == 1
-        drop v102 v190 v133 v130
+        drop v102 v190 v133
         
         save `Ff`file''
     }
@@ -501,6 +501,46 @@ if `regionL' == 1 {
     drop _merge
 
     save "$OUT/mmrRegions", replace
+
+    ***RELIGION NAMES:
+    tokenize `COU'
+    local j = 1
+    foreach survey of local SUR {
+        dis "country: `1', year: `2', survey: `survey'"
+        use "$DAT/`1'/`2'/`survey'.dta"
+        gen n=1
+        collapse n, by(v130)
+        gen _cou = "`1'"
+        cap decode v130, gen(religion)
+        if _rc!=0 gen religion = "NA"
+        keep v130 _cou religion
+        gen _year = "`2'"
+        tempfile r`j'
+        save `r`j''
+        
+        macro shift
+        macro shift
+        local ++j
+    }
+    dis `j'
+    clear
+    #delimit ;
+    append using `r1' `r2' `r3' `r4' `r5' `r6' `r7' `r8' `r9' `r10' `r11' `r12'
+                 `r13' `r14' `r15' `r16' `r17' `r18' `r19' `r20' `r21' `r22'
+                 `r23' `r24' `r25' `r26' `r27' `r28' `r29' `r30' `r31' `r32'
+                 `r33' `r34' `r35' `r36' `r37' `r38' `r39' `r40' `r41' `r42'
+                 `r43' `r44' `r45' `r46' `r47' `r48' `r49' `r50' `r51' `r52'
+                 `r53' `r54' `r55' `r56' `r57' `r58' `r59' `r60' `r61' `r62'
+                 `r63' `r64' `r65' `r66' `r67' `r68' `r69' `r70' `r71' `r72'
+                 `r73' `r74' `r75' `r76' `r77' `r78' `r79' `r80' `r81' `r82'
+                 `r83' `r84' `r85' `r86' `r87' `r88' `r89' `r90' `r91' `r92'
+                 `r93' `r94' `r95' `r96' `r97' `r98' `r99' `r100' `r101' `r102'
+                 `r103' `r104';
+    #delimit cr
+    bys v130 _cou _year: gen n=_n
+    drop if n==2
+    drop n
+    save "$OUT/religionCodes", replace
 }
 
 
@@ -523,7 +563,37 @@ if `covarGen' == 1 {
     save `MaleYears'
 
     use "$OUT/Microbase_Female_year"
-    collapse female* wealth* urban [pw=v005], by(_cou _year v101)
+    drop religion
+    merge m:1 v130 _cou _year using "$OUT/religionCodes"
+    #delimit ;
+    gen muslim = 1 if religion=="Islamic"|religion=="Muslim"|religion=="islam"  |
+         religion=="islamic"|religion=="islamic (mu�ulman)"|religion=="moslem"  |
+         religion=="mulsim"|religion=="muslem"|religion=="muslim/islam"         |
+         religion=="muslim"|religion=="muslum"|religion=="musulman"             ;
+    gen christian = 1 if religion=="Catholic"|religion=="Other Christian"       |
+         religion=="catholic"|religion=="catholic (católica)"                   |
+         religion=="christian"|religion=="christian/protestant"                 |
+         religion=="christrian"|religion=="other christian"                     |
+         religion=="other christians"|religion=="other christian religions"     |
+         religion=="roman catholic"|religion=="roman catholic church"           ;
+    gen protestant = 1 if religion=="ccap"|religion=="christian/protestant"     |
+         religion=="Protestant"|religion=="prostestant"|religion=="protestant"  |
+         religion=="protestant (protestante)"|religion=="protestant / evangelic"|
+         religion=="protestant /christian"|religion=="protestant methodist"     |
+         religion=="protestant presbyterian, methodist"                         |
+         religion=="protestant, methodist, adventist, witne"                    |
+         religion=="protestant/ methodist/adventist/jehova"                     |
+         religion=="protestant/ other christian"|religion=="protestant/flm"     |
+         religion=="protestant/other christian"|religion=="tradit. protestant"  ;
+    #delimit cr
+    replace muslim=    0 if muslim    !=1 & religion!=""
+    replace christian= 0 if christian !=1 & religion!=""
+    replace protestant=0 if protestant!=1 & religion!=""
+    
+    
+
+    collapse female* wealth* urban muslim christian protestant [pw=v005], /*
+    */ by(_cou _year v101)
 
     lab var femaleViolence_a "Wife beating justified if goes out without telling"
     lab var femaleViolence_b "Wife beating justified if neglects children"

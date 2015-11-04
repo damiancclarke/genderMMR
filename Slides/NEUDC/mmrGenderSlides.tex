@@ -66,7 +66,8 @@ Expectancy: The Importance of Gender Inequality}
         consistent with 40-50\% of maternal deaths being the result of post-partum
         puerperal sepsis (an infection).
   \item Our hypothesis: the sluggishness of MMR decline is a function of gender 
-        prejudice, or \hyperlink{Yentl}{\textcolor{blue}{The Yentl Syndrome}}.
+        prejudice, (in Med/Public Health: \hyperlink{Yentl}{\textcolor{blue}
+        {The Yentl Syndrome}}).
 \end{itemize}
 \end{frame}
 
@@ -236,6 +237,65 @@ MMR_{it} = \beta_0 + \beta_1 GII_i + \beta_2 PercentLang_i + X_{it} + X_i  + \nu
 \input{./tables/MMRGII.tex}
 \end{frame}
 
+
+%********************************************************************************
+\begin{frame}
+\frametitle{(3) Sub-national Variation in Gender Bias}
+Cross-country evidence above provides suggestive evidence, but concerns given
+that language is fixed by country, and potential for unobservables in panel 
+results
+\vspace{5mm}
+\begin{itemize}
+  \item We use time and regional variation in MMR to examine whether historically
+        more biased regions progress less towards improvements in female health
+        outcomes
+  \item Examine subsistence types (Michalopoulos et al., 2014), and catholic
+        versus protestant missions (Nunn, 2012)
+  \item We observe local (sub-national) variation in these variables, so can
+        capture-specific factors
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{(3) Sub-national Variation in Gender Bias}
+\begin{figure}
+\includegraphics[scale=0.5]{./figures/Africa_subsistence.jpg}
+\caption{Subsistence Types (Murdoch 1959)}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{(3) Sub-national Variation in Gender Bias}
+For example, Michalopoulos et al.\ (2014):
+\vspace{2mm}
+\begin{equation}
+\label{eqn:SubType}
+MMR_{itc} = \beta_0 + \beta_1 Pastoral_i + X_{it} + X_i + \alpha_t + \alpha_c + \nu_{it},
+\end{equation}
+\begin{itemize}
+\item We use Michalopoulos et al.'s specification to test whether areas which
+      were historically pastoral, have worse female health outcomes today
+\item Evidence that these were historically areas with more violence towards
+      women and there is lower status of women in these societies
+\item Using full sister histories from DHS, we construct regional measures
+      of MMR for 306 regions from 32 countries in DHS
+\end{itemize}
+\end{frame}
+
+
+
+
+
+
+
+\begin{frame}
+\input{./tables/subsistence.tex}
+\end{frame}
+
+
+
+
+
 %********************************************************************************
 \begin{frame}
 \frametitle{(4) Gender Neutral Placebo Tests}
@@ -247,7 +307,6 @@ MMR_{it} = \beta_0 + \beta_1 GII_i + \beta_2 PercentLang_i + X_{it} + X_i  + \nu
         100,000 (ie a range very similar to MMR)
   \item We estimate the same set of specifications with the same measures of
         gender bias, replacing MMR with TB.
-  \item If we are capturing 
 \end{itemize}
 \end{frame}
 
@@ -263,7 +322,23 @@ MMR_{it} = \beta_0 + \beta_1 GII_i + \beta_2 PercentLang_i + X_{it} + X_i  + \nu
 \input{./tables/tbGII.tex}
 \end{frame}
 
-
+%********************************************************************************
+\begin{frame}
+\frametitle{Discussion and Conclusions}
+\begin{itemize}
+	\item Preventable maternal mortality is still very high in many developing 
+        countries, even after falling by almost 50\% since 1990.
+	\item It exhibits substantial cross-country variation conditional on income.
+	\item We show that there is a consistent relationship whereby MMR conditional 
+        on income varies systematically with measures of gender prejudice.
+	\item Female life expectancy advantage behaves like MMR in this regard
+	\item This result is, in general, robust to alternative measures of gender 
+        prejudice
+	\item It is evident within countries over time and in the cross-section of
+        countries, it was evident in 1930s America and is evident in today's
+        poorer countries.
+\end{itemize}
+\end{frame}
 
 
 

@@ -39,7 +39,7 @@ Expectancy: The Importance of Gender Inequality}
  \author[Bhalotra et al.]{Sonia Bhalotra (Essex)
     \and Damian Clarke (Oxford) \\ \vspace{1mm}
     \and Joseph Gomes (Navarra)
-    \and Atheen Venkataramani (MGH)}
+    \and Atheen Venkataramani (Mass Gen)}
 
 
 \date{November 2015}
@@ -102,6 +102,8 @@ log(MMR)_{st} & = &\alpha + \beta \mathbb{I}[Post1937]_t + \gamma(EarlySuf_{s}\t
 \begin{itemize}
   \item $\delta_1$ and $\delta_2$ test whether there are larger level and trend 
         breaks in MMR in early suffrage states.
+  \item Suffrage was mandated in 1920.  More gender progressive states legislated
+        earlier (Miller, 2008)
   \item We estimate the same equation for pneumonia which was most prevalent 
         among infants and especially boys, and was treatable with sulfa. So good 
         falsification test.
@@ -252,7 +254,7 @@ results
   \item Examine subsistence types (Michalopoulos et al., 2014), and catholic
         versus protestant missions (Nunn, 2012)
   \item We observe local (sub-national) variation in these variables, so can
-        capture-specific factors
+        control for country-specific factors (FEs)
 \end{itemize}
 \end{frame}
 
@@ -266,15 +268,16 @@ results
 
 \begin{frame}
 \frametitle{(3) Sub-national Variation in Gender Bias}
-For example, Michalopoulos et al.\ (2014):
+For example, Michalopoulos et al.\ (2014) propose specification with economic
+outcomes on LHS:
 \vspace{2mm}
 \begin{equation}
 \label{eqn:SubType}
 MMR_{itc} = \beta_0 + \beta_1 Pastoral_i + X_{it} + X_i + \alpha_t + \alpha_c + \nu_{it},
 \end{equation}
 \begin{itemize}
-\item We use Michalopoulos et al.'s specification to test whether areas which
-      were historically pastoral, have worse female health outcomes today
+\item We follow Michalopoulos et al.'s specification, but test whether areas which
+      were historically pastoral, have worse \emph{female health} outcomes today
 \item Evidence that these were historically areas with more violence towards
       women and there is lower status of women in these societies
 \item Using full sister histories from DHS, we construct regional measures
@@ -282,10 +285,10 @@ MMR_{itc} = \beta_0 + \beta_1 Pastoral_i + X_{it} + X_i + \alpha_t + \alpha_c + 
 \end{itemize}
 \end{frame}
 
-
-
-
-
+%\begin{frame}
+%\frametitle{(3) Sub-national Variation in Gender Bias}
+%Similarly, catholic versus protestant missions 
+%\end{frame}
 
 
 \begin{frame}
@@ -297,7 +300,7 @@ MMR_{itc} = \beta_0 + \beta_1 Pastoral_i + X_{it} + X_i + \alpha_t + \alpha_c + 
 
 
 %********************************************************************************
-\begin{frame}
+\begin{frame}[label=placebos]
 \frametitle{(4) Gender Neutral Placebo Tests}
 \begin{itemize}
 \setlength{\itemsep}{10pt}
@@ -307,20 +310,17 @@ MMR_{itc} = \beta_0 + \beta_1 Pastoral_i + X_{it} + X_i + \alpha_t + \alpha_c + 
         100,000 (ie a range very similar to MMR)
   \item We estimate the same set of specifications with the same measures of
         gender bias, replacing MMR with TB.
+  \item Same tests replacing MMR with TB largely lead to null results:
+  \begin{itemize}
+    \item \hyperlink{placebo1}{\textcolor{blue}{Women's Rights as gender
+                                                inequality proxy}}
+    \item \hyperlink{placebo2}{\textcolor{blue}{Desired Sex Ratio}}
+    \item \hyperlink{placebo3}{\textcolor{blue}{Gender inequality embedded in
+                                                language}}
+  \end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\input{./tables/tb-DSR.tex}
-\end{frame}
-
-\begin{frame}
-\input{./tables/rightstb.tex}
-\end{frame}
-
-\begin{frame}[plain]
-\input{./tables/tbGII.tex}
-\end{frame}
 
 %********************************************************************************
 \begin{frame}
@@ -430,6 +430,21 @@ business, education, research, and health care.}}}\\
 \end{frame}
 
 
+
+\begin{frame}[label=placebo1]
+\input{./tables/rightstb.tex}
+{\footnotesize \hyperlink{placebos}{\textcolor{blue}{back}}}
+\end{frame}
+
+\begin{frame}[label=placebo2]
+\input{./tables/tb-DSR.tex}
+{\footnotesize \hyperlink{placebos}{\textcolor{blue}{back}}}
+\end{frame}
+
+\begin{frame}[plain,label=placebo3]
+\input{./tables/tbGII.tex}
+{\footnotesize \hyperlink{placebos}{\textcolor{blue}{back}}}
+\end{frame}
 
 
 

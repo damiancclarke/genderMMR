@@ -41,11 +41,12 @@ local Mcreate  0
 local Fcreate  0
 local Ecreate  0
 local Wcreate  0
+local Ccreate  1
 local yearGen  0
 local regionL  0
 local country  0
-local covarGen 1
-local afroBar  1
+local covarGen 0
+local afroBar  0
 
 local group _cou _year region v101
 local file Regions
@@ -187,6 +188,54 @@ if `Wcreate' == 1 {
     append using `Ff1' `Ff2' `Ff3' `Ff4' `Ff5' `Ff6' `Ff7'
 
     save "$OUT/Microbase_Female_year", replace
+}
+
+********************************************************************************
+*** (2d) children from Women's Recode
+********************************************************************************
+if `Ccreate' == 1 {
+    foreach file in 1 2 3 4 5 6 7 {
+        dis "Working on children from women's recode file `file'..."
+        tempfile Cf`file'
+	
+        use "$DAT/World_IR_p`file'", clear
+        count
+        #delimit ;
+        keep _cou _year v005 v101 v102 m2a_* m2b_* m2d_* m2n_* m3a_* m3b_*
+            m3d_* m3n_* b2_01-b2_06
+
+        #delimit cr
+        foreach num of numlist 1(1)6 {
+            rename b2_0`num' b2_`num'
+        }
+        gen mo = _n
+        reshape long m2a_ m2b_ m2d_ m2n_ m3a_ m3b_ m3d_ m3n_ b2_, i(mo) j(child)        
+        replace b2_ = b2_ + 100 if  b2_==0
+        replace b2_ = b2_ + 1900 if b2_<=100        
+        replace b2_ = b2_ - 57  if _cou=="Nepal"
+        replace b2_ = b2_ + 100 if _cou=="Nepal" & b2_<1900
+        replace b2_ = 2001 if b2_==1901
+        replace b2_ = 2002 if b2_==1902
+        rename  b2_ birthYear
+
+        drop if m2a_==. & m2b_==. & m2d_==. & m2n_==.
+        gen doctorPrenate = m2a_==1 if m2a_!=9 & m2a_!=.
+        gen nursePrenate  = m2b_==1 if m2b_!=9 & m2b_!=.
+        gen healthPrenate = m2d_==1 if m2d_!=9 & m2d_!=.
+        gen nonePrenate   = m2n_==1 if m2n_!=9 & m2n_!=.
+        gen doctorAttend  = m3a_==1 if m3a_!=9 & m3a_!=.
+        gen nurseAttend   = m3b_==1 if m3b_!=9 & m3b_!=.
+        gen healthAttend  = m3d_==1 if m3d_!=9 & m3d_!=.
+        gen noneAttend    = m3n_==1 if m3n_!=9 & m3n_!=.
+        gen urban         = v102 == 1
+        drop mother v102
+        
+        save `Cf`file''
+    }
+    clear
+    append using `Cf1' `Cf2' `Cf3' `Cf4' `Cf5' `Cf6' `Cf7'
+
+    save "$OUT/Microbase_Child_year", replace
 }
 
 ********************************************************************************
@@ -561,6 +610,18 @@ if `covarGen' == 1 {
     
     tempfile MaleYears
     save `MaleYears'
+
+    use "$OUT/Microbase_Child_year"
+    collapse *Prenate *Attend [pw=v005], by(_cou birthYear v101)
+    lab var doctorPrenate "Any Prenatal Care by Doctor"
+    lab var nursePrenate  "Any Prenatal Care by Nurse"
+    lab var healthPrenate "Any Prenatal Care by Other Trained Health worker"
+    lab var nonePrenate   "No Prenatal Care Received"
+    lab var doctorAttend  "Birth Attended by Doctor"
+    lab var nurseAttend   "Birth Attended by by Nurse"
+    lab var healthAttend  "Birth Attended by by Other Trained Health worker"
+    lab var noneAttend    "Birth not attended by anyone"
+
 
     use "$OUT/Microbase_Female_year"
     drop religion

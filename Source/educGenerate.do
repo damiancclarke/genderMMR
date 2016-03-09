@@ -29,6 +29,7 @@ global DAT "~/investigacion/2013/WorldMMR/Data"
 ********************************************************************************
 use "$DAT/LangGender_dataset"
 drop if not_country==1
+drop yr_sch
 rename isocode WBcode
 replace WBcode = "ROM" if WBcode == "MDA"
 replace WBcode = "SER" if WBcode == "SRB"
@@ -38,7 +39,9 @@ merge 1:1 WBcode year using  "$DAT/BL2013_F2599_v2.1.dta"
 drop if _merge==2 
 
 
-
+********************************************************************************
+*** (3) Fill in from FDR education (MICS and DHS).  Orig file saved as HDREduc
+********************************************************************************
 replace yr_sch = 10.3 if year==2010&country=="Samoa"
 replace yr_sch = 11.1 if year==2010&country=="Bahamas, The"
 replace yr_sch = 11.4 if year==2010&country=="Belarus"
@@ -65,35 +68,3 @@ replace yr_sch = 8.0  if year==2010&country=="Vanuatu"
 
 
 exit
-
-drop if not_country == 1
-collapse cncode, by(isocode country)
-rename isocode WBcode
-
-tempfile cnames
-save `cnames'
-
-use "$DAT/BL2013_F2599_v2.1.dta", clear
-replace WBcode = "MDA" if WBcode == "ROM"
-replace WBcode = "SRB" if WBcode == "SER"
-rename country countryBL
-merge m:1 WBcode using `cnames'
-drop if _merge==1
-expand 13 if _merge==2
-sort country year
-by country: replace year = 1945+5*_n if year==.
-drop _merge
-
-********************************************************************************
-*** (3) Replace top year of education from MICS/DHS from HDR records
-***     This original data has been saved as HDREduc.dta. (DCC)
-********************************************************************************
-
-
-keep yr_sch WBcode year country
-rename WBcode isocode
-
-********************************************************************************
-*** (4) Merge back in for imputation
-********************************************************************************
-merge 1:1 country year using "$DAT/LangGender_dataset"

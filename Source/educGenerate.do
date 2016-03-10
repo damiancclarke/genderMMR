@@ -2,17 +2,9 @@
 ----|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 
 Generates educational data by year and country using a combination of Barro-Lee,
-
-exit
-
-merge 1:m countrycode using "$DAT/GDPpercap"
-keep if _merge==3
-
-keep country countrycode iso2code cncode
-collapse cncode, by(country* iso*)
-rename countrycode WBcode
-
+MICS and DHS.  See imputationNotes.doc for a full description.
 */
+    
 vers 11
 clear all
 set more off
@@ -37,7 +29,6 @@ replace WBcode = "SER" if WBcode == "SRB"
 merge 1:1 WBcode year using  "$DAT/BL2013_F2599_v2.1.dta" 
 * drop BL data with year<1950 and for Taiwan and Reunion
 drop if _merge==2 
-
 
 ********************************************************************************
 *** (3) Fill in from FDR education (MICS and DHS).  Orig file saved as HDREduc
@@ -66,5 +57,43 @@ replace yr_sch = 3.6  if year==2010&country=="Timor-Leste"
 replace yr_sch = 9.5  if year==2010&country=="Uzbekistan"
 replace yr_sch = 8.0  if year==2010&country=="Vanuatu"
 
+********************************************************************************
+*** (4) Multiple imputation
+********************************************************************************
+xtset, clear
+stset, clear
+preserve
+keep if year==1990|year==1995|year==2000|year==2005|year==2010
+drop if MMR == .
+drop if lgdp_5 == .
+gen lgdpsq = lgdp_5*lgdp_5
+mi set wide
+mi register imputed yr_sch
+mi register regular lgdp_5 year contcode
+mi impute regress yr_sch lgdp_5 lgdpsq i.year i.contcode, add(20) rseed(42)
 
-exit
+rename _20_yr_sch yr_sch_impute 
+keep yr_sch_impute year WBcode _mi_miss
+tempfile impeduc
+save `impeduc'
+restore
+
+drop _merge
+merge 1:1 year WBcode using `impeduc'
+
+
+********************************************************************************
+*** (5) Test
+********************************************************************************
+mi set, clear
+xtset cncode year
+
+gen lMMR = log(MMR)
+gen womparl_gdp_5 = womparl_5*lgdp_5
+gen yrsq = yr_sch_impute*yr_sch_impute
+local vars womparl_5 lgdp_5 womparl_gdp_5
+
+xtreg lMMR `vars' i.year                           , fe cluster(WBcode)
+xtreg lMMR `vars' health_exp_5 i.year              , fe cluster(WBcode)
+xtreg lMMR `vars' health_exp_5 yr_sch_i i.year     , fe cluster(WBcode)
+xtreg lMMR `vars' health_exp_5 yr_sch_i i.year yrsq, fe cluster(WBcode)

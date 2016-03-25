@@ -20,6 +20,9 @@ cap log close
 global DAT "~/investigacion/2013/WorldMMR/Data"
 global OUT "~/investigacion/2013/WorldMMR/Results/WomenParliament/Appendix"
 global LOG "~/investigacion/2013/WorldMMR/Log"
+global DAT "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Data"
+global OUT "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Results/WomenParliament/Appendix"
+global LOG "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Log"
 
 cap mkdir $OUT
 log using "$LOG/appendixTables.txt", text replace
@@ -37,6 +40,9 @@ local estopt cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 ********************************************************************************
 use "$DAT/LangGender_dataset.dta", clear
 drop if not_country == 1
+
+drop loggdppc_5
+gen loggdppc_5 = log(gdpppp1_5)
 
 quietly sum loggdppc_5
 replace loggdppc_5  = loggdppc_5 - r(min)
@@ -170,6 +176,7 @@ estimates clear
 restore
 
 
+
     
 local conds all==1 lowinc==0 lowinc==1
 local names All HighInc LowInc
@@ -219,7 +226,44 @@ foreach c of local conds {
 }
 
 ********************************************************************************
-*** (4b) Replace WDI with DHS Measure
+*** (4c) Weighted
+********************************************************************************
+preserve
+bys cncode: egen popwt = mean(pop_5)
+
+xtreg `dep' `indep5', `se' fe
+keep if e(sample)
+foreach num of numlist 1(1)5 { 
+    qui eststo: xtreg `dep' `indep`num'' [aw=popwt], `se' fe
+}
+#delimit ;
+esttab est1 est2 est3 est4 est5 using "$OUT/MMRWomParl_popln.tex", replace 
+`estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5 democ_5)
+title("The Effect of Women in Parliament on Rates of Maternal Mortality") 
+style(tex) mlabels(, depvar) booktabs
+postfoot("Country and Year FE  & Y & Y & Y & Y & Y\\                          "
+         "Health/Educ Controls &   &   &   & Y & Y\\                          "
+         "Continent by Year FE & & & & & Y \\ \bottomrule                     "
+         "\multicolumn{6}{p{16cm}}{\begin{footnotesize}\textsc{Notes:}        "
+         "The estimation sample consists of all countries for which WDI       "
+         "maternal mortality data and full controls are avaialable.  Health   "
+         "expenditure controls are not available in 1990 (refer to            "
+         "supplementary tables for a version without health expenditure       "
+         "controls). Health and Education controls (columns 4 and 5) refer to "
+         "total health spending as a proportion of GDP, and average years of  "
+         "women's education in the population of over 21 year-olds. Standard  "
+         "errors clustered by country are presented in parentheses, and stars "
+         "refer to statistical significance levels.   "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+
+estimates clear
+restore
+
+
+********************************************************************************
+*** (4c) Replace WDI with DHS Measure
 ********************************************************************************
 preserve
 local dep "lMMR_DHS"
@@ -252,9 +296,35 @@ postfoot("Country and Year FE & Y & Y & Y & Y & Y\\                           "
 #delimit cr
 
 estimates clear
+
+local dep "lMMR"
+foreach num of numlist 1(1)5 { 
+    qui eststo: xtreg `dep' `indep`num'', `se' fe
+}
+#delimit ;
+esttab est1 est2 est3 est4 est5 using "$OUT/MMRParl_DHSSample.tex", replace 
+`estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5 democ_5)
+title("Estimates Using DHS Sample and WDI MMR Variable") booktabs
+style(tex) mlabels(, depvar)
+postfoot("Country and Year FE & Y & Y & Y & Y & Y\\                           "
+         "Health/Educ Controls &   &   &   & Y & Y\\                          "
+         "Continent by Year FE & & & & & Y \\ \bottomrule                     "
+         "\multicolumn{6}{p{16cm}}{\begin{footnotesize}\textsc{Notes:}        "
+         "Estimation sample consists of all DHS countries in which the        "
+         "maternal mortality module has been applied, and the WDI maternal    "
+	 "mortality data is used.  Standard errors clustered by country are   "
+         "presented in parentheses, and stars refer to significance levels.   "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}");
+#delimit cr
+
+estimates clear
+
 restore
+
+
 ********************************************************************************
-*** (4c) Placebo tests
+*** (4d) Placebo tests
 ********************************************************************************
 lab var lmale_1549  "log(Mort)"
 lab var ltb_death_5 "log(TB)"

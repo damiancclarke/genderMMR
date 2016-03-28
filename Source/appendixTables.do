@@ -203,7 +203,7 @@ postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                      "
 	 "Controls             ;   ;   ; Y ; Y ; Y                            "
          "1995-2010 Only       ;   ;   ;   ; Y ; Y                            "
          "Health Expenditure   ;   ;   ;   ;   ; Y                            "
-         "Notes: The estimation sample consists of all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd').  The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP and its interaction is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels."
+         "Notes: The estimation sample consists of all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd').  The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels."
 "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 #delimit cr
 estimates clear
@@ -275,7 +275,7 @@ foreach c of local conds {
         	 "Controls             ;   ;   ; Y ; Y ; Y                      "
                  "1995-2010 Only       ;   ;   ;   ; Y ; Y                      "
                  "Health Expenditure   ;   ;   ;   ;   ; Y                      "
- 		 "The estimation sample consists of `topt' all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. The income status (high versus low) is defined based on median income in the sample.  Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP and its interaction is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
+ 		 "The estimation sample consists of `topt' all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. The income status (high versus low) is defined based on median income in the sample.  Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 	#delimit cr
 	
 	estimates clear
@@ -326,40 +326,19 @@ foreach num of numlist 3 2 1 5 4 {
 esttab est3 est2 est1 est5 est4 using "$OUT/MMRWomParl_popln.csv", replace 
 `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5)
 title("The Effect of Women in Parliament on Rates of Maternal Mortality") 
-style(tex) nomtitles booktabs nonumbers
-posthead("\multicolumn{6}{l}"
-	"{\textsc{Dependent variable}: Logarithm of maternal mortality ratio}"
-	"\\ &(1)&(2)&(3)&(4)&(5) \\ \midrule")
-postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                    "
-	 "Country and Year FE  & Y & Y & Y & Y & Y\\                          "
-	 "Controls             &   &   & Y & Y & Y\\                          "
-         "1995-2010 Only       &   &   &   & Y & Y \\                         "
-         "Health Expenditure   &   &   &   &   & Y \\ \bottomrule             "
-         "\multicolumn{6}{p{14.5cm}}{\begin{footnotesize}\textsc{Notes:}      "
-         "The estimation sample consists of all countries for which WDI       "
-         "maternal mortality data and full controls are available, with       "
-	 "quinquennial observations from 1990-2010 (inclusive) unless         "
-	 "otherwise indicated. Controls consist of the democracy score,       "
-	 "average female years of education, continent by year fixed effects, "
-         "and, where indicated, total health expenditure as a proportion of   "
-	 "GDP. The population-weighted mean and standard deviation of the     "
-	 "dependent variable in the 1990-2010 sample is `depmean' and `depsd'."
-	 "The population-weighted mean (sd) for the percent of women in       "
-	 "parliament in the sample is `wommean'(`womsd'). "
-	 "The range of inflation and PPP adjusted log GDP per capita in the   "
-	 "sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When       "
-	 "included in the regression, this       "
-	 "variable has been standardised by subtracting the minimum value from"
-	 "each observation, so GDP and its interaction is interpreted as the  "
-	 "effect in the poorest country. Standard errors clustered by country "
-	 "are presented in parentheses, and stars refer to statistical        "
-	 "significance levels.   "
-         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}");
+nomtitles nonumbers delimiter(";")
+posthead("Dependent variable: Logarithm of maternal mortality ratio"
+	";(1);(2);(3);(4);(5)")
+postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                      "
+	 "Country and Year FE  ; Y ; Y ; Y ; Y ; Y                            "
+	 "Controls             ;   ;   ; Y ; Y ; Y                            "
+         "1995-2010 Only       ;   ;   ;   ; Y ; Y                            "
+         "Health Expenditure   ;   ;   ;   ;   ; Y                            "
+         "The estimation sample consists of all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The population-weighted mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The population-weighted mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 #delimit cr
 estimates clear
 restore
-*/
+
 ********************************************************************************
 *** (4d) Replace WDI with DHS Measure
 ********************************************************************************
@@ -400,40 +379,18 @@ foreach num of numlist 3 2 1 5 4 {
    }
 }
 #delimit ;
-esttab est3 est2 est1 est5 est4 using "$OUT/MMRParl_DHS.tex", replace 
+esttab est3 est2 est1 est5 est4 using "$OUT/MMRParl_DHS.csv", replace 
 `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5)
 title("Replacing WDI Measure of Maternal Mortality Ratio with DHS Measure") 
-style(tex) nomtitles booktabs nonumbers
-posthead("\multicolumn{6}{l}"
-	"{\textsc{Dependent variable}: Logarithm of maternal mortality ratio (DHS)}"
-	"\\ &(1)&(2)&(3)&(4)&(5) \\ \midrule")
-postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                    "
-	 "Country and Year FE  & Y & Y & Y & Y & Y\\                          "
-	 "Controls             &   &   & Y & Y & Y\\                          "
-         "1995-2010 Only       &   &   &   & Y & Y \\                         "
-         "Health Expenditure   &   &   &   &   & Y \\ \bottomrule             "
-         "\multicolumn{6}{p{14cm}}{\begin{footnotesize}\textsc{Notes:}      "
-         "The estimation sample consists of all countries in which a          "
-	 "Demographic and Health Survey has been conducted, and in which the  "
-	 "maternal mortality module was applied.  The DHS measure of the      "
-	 "dependent variable is constructed for the same quinquennial periods "
-	 "as the WDI measure (1990-2010) wherever survey data is available.   "
-	 "Controls consist of the democracy score,       "
-	 "average female years of education, continent by year fixed effects, "
-         "and, where indicated, total health expenditure as a proportion of   "
-	 "GDP. The mean and standard deviation of the dependent variable in   "
-	 "the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the"
-	 "percent of women in parliament in the sample is `wommean'(`womsd'). "
-	 "The range of inflation and PPP adjusted log GDP per capita in the   "
-	 "sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When       "
-	 "included in the regression, this       "
-	 "variable has been standardised by subtracting the minimum value from"
-	 "each observation, so GDP and its interaction is interpreted as the  "
-	 "effect in the poorest country. Standard errors clustered by country "
-	 "are presented in parentheses, and stars refer to statistical        "
-	 "significance levels.   "
-         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}");
+nomtitles nonumbers delimiter(";")
+posthead("Dependent variable: Logarithm of maternal mortality ratio (DHS) "
+	 " ;(1);(2);(3);(4);(5)")
+postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                      "
+	 "Country and Year FE  ; Y ; Y ; Y ; Y ; Y                            "
+	 "Controls             ;   ;   ; Y ; Y ; Y                            "
+         "1995-2010 Only       ;   ;   ;   ; Y ; Y                            "
+         "Health Expenditure   ;   ;   ;   ;   ; Y                            "
+"The estimation sample consists of all countries in which a Demographic and Health Survey has been conducted, and in which the maternal mortality module was applied.  The DHS measure of the dependent variable is constructed for the same quinquennial periods as the WDI measure (1990-2010) wherever survey data is available. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 #delimit cr
 estimates clear
 restore
@@ -476,44 +433,23 @@ foreach num of numlist 3 2 1 5 4 {
    }
 }
 #delimit ;
-esttab est3 est2 est1 est5 est4 using "$OUT/MMRParl_DHSSample.tex", replace 
+esttab est3 est2 est1 est5 est4 using "$OUT/MMRParl_DHSSample.csv", replace 
 `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5)
 title("Estimates Using DHS Sample and WDI MMR Variable")
-style(tex) nomtitles booktabs nonumbers
-posthead("\multicolumn{6}{l}"
-	"{\textsc{Dependent variable}: Logarithm of maternal mortality ratio}"
-	"\\ &(1)&(2)&(3)&(4)&(5) \\ \midrule")
-postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                    "
-	 "Country and Year FE  & Y & Y & Y & Y & Y\\                          "
-	 "Controls             &   &   & Y & Y & Y\\                          "
-         "1995-2010 Only       &   &   &   & Y & Y \\                         "
-         "Health Expenditure   &   &   &   &   & Y \\ \bottomrule             "
-         "\multicolumn{6}{p{14cm}}{\begin{footnotesize}\textsc{Notes:}      "
-         "The estimation sample consists of all countries in which a          "
-	 "Demographic and Health Survey has been conducted, and in which the  "
-	 "maternal mortality module was applied.  This table uses the WDI     "
-	 "measuse of the maternal mortality ratio, however for the DHS sample."
-	 "Controls consist of the democracy score,                            "
-	 "average female years of education, continent by year fixed effects, "
-         "and, where indicated, total health expenditure as a proportion of   "
-	 "GDP. The mean and standard deviation of the dependent variable in   "
-	 "the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the"
-	 "percent of women in parliament in the sample is `wommean'(`womsd'). "
-	 "The range of inflation and PPP adjusted log GDP per capita in the   "
-	 "sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When       "
-	 "included in the regression, this       "
-	 "variable has been standardised by subtracting the minimum value from"
-	 "each observation, so GDP and its interaction is interpreted as the  "
-	 "effect in the poorest country. Standard errors clustered by country "
-	 "are presented in parentheses, and stars refer to statistical        "
-	 "significance levels.   "
-         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}");
+nomtitles nonumbers delimiter(";")
+posthead("Dependent variable: Logarithm of maternal mortality ratio"
+	 ";(1);(2);(3);(4);(5)")
+postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                     "
+	 "Country and Year FE  ; Y ; Y ; Y ; Y ; Y                           "
+	 "Controls             ;   ;   ; Y ; Y ; Y                           "
+         "1995-2010 Only       ;   ;   ;   ; Y ; Y                           "
+         "Health Expenditure   ;   ;   ;   ;   ; Y                           "
+"The estimation sample consists of all countries in which a Demographic and Health Survey has been conducted, and in which the maternal mortality module was applied.  This table uses the WDI measuse of the maternal mortality ratio, however for the DHS sample. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the  sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 #delimit cr
 estimates clear
 restore
 
-exit
+
 
 ********************************************************************************
 *** (4e) Placebo tests
@@ -561,38 +497,17 @@ foreach placebo of varlist lmale_1549 ltb_death_5 {
        }
    }
     #delimit ;
-    esttab est3 est2 est1 est5 est4 using "$OUT/Placebo_`name'.tex", replace 
-    `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5)
-    title("Placebo Test using `note' as the Dependent Variable") booktabs
-    style(tex) nomtitles nonumbers
-    posthead("\multicolumn{6}{l}"
-             "{\textsc{Dependent variable}: Logarithm of `note'}"
-	     "\\ &(1)&(2)&(3)&(4)&(5) \\ \midrule")
-    postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                 "
-       	     "Country and Year FE  & Y & Y & Y & Y & Y\\                       "
-	     "Controls             &   &   & Y & Y & Y\\                       "
-             "1995-2010 Only       &   &   &   & Y & Y \\                      "
-             "Health Expenditure   &   &   &   &   & Y \\ \bottomrule          "
-             "\multicolumn{6}{p{`cm'}}{\begin{footnotesize}\textsc{Notes:}     "
-             "Placebo tests run identical specifications as those in table 2 of"
-             "the main paper, however replace the log of MMR (a woman-specific "
-             "health outcome, with the log of a male, or gender neutral health "
-             "outcome. Controls consist of the democracy score, average female "
-	     "years of education, continent by year fixed effects, and, where  "
-	     "indicated, total health expenditure as a proportion of GDP. The  "
-	     "mean and standard deviation of the dependent variable in the     "
-	     "1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the "
-	     "percent of women in parliament in the sample is                  "
-	     "`wommean'(`womsd'). The range of inflation and PPP adjusted log  "
-	     "GDP per capita in the sample is from `minGDP' (`mincc') to       "
-	     "`maxGDP' (`maxcc'). When included in the regression, this        "
-	     "variable has been standardised by subtracting the minimum value  "
-	     "from each observation, so GDP and its interaction is interpreted "
-	     "as the effect in the poorest country. Standard errors clustered  "
-	     "by country are presented in parentheses, and stars refer to      "
-	     "statistical significance levels.   "
-	     "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-	     "\end{footnotesize}}\end{tabular}\end{table}");
+    esttab est3 est2 est1 est5 est4 using "$OUT/Placebo_`name'.csv", replace 
+    `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5) nomtitles delimiter(";")
+    title("Placebo Test using `note' as the Dependent Variable") nonumbers
+    posthead("Dependent variable: Logarithm of `note'"
+	     "  ;(1);(2);(3);(4);(5)")
+    postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                  "
+       	     "Country and Year FE  ; Y ; Y ; Y ; Y ; Y                        "
+	     "Controls             ;   ;   ; Y ; Y ; Y                        "
+             "1995-2010 Only       ;   ;   ;   ; Y ; Y                        "
+             "Health Expenditure   ;   ;   ;   ;   ; Y                        "
+"Placebo tests run identical specifications as those in table 2 of  the main paper, however replace the log of MMR (a woman-specific health outcome, with the log of a male, or gender neutral health outcome. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
     #delimit cr
 
     estimates clear

@@ -33,7 +33,8 @@ local estopt cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 	     starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label;
 #delimit cr
 
-
+cap which estout
+if _rc!=0 ssc install estout
 
 ********************************************************************************
 *** (2) Open data, generate vars
@@ -63,13 +64,13 @@ lab var ltb_5           "Log of TB"
 lab var ltb_death_5     "Log of TB death rate"
 lab var lmale_1549      "Log of male mortality (15-49 years)"
 lab var ln_ratio_FM1549 "Log of female/male mortality (15-49 years)"
-lab var womparl_5       "\% Women in Parliament"
+lab var womparl_5       "% Women in Parliament"
 lab var loggdppc_5      "Log(GDP)"
 lab var democ_5         "Democracy score"
 lab var health_exp_5    "Health expenditure"
 lab var yr_sch_impute   "Female years of schooling"
 lab var lpop_5          "Log of Population"
-lab var womparl_gdp_5   "Women Parl. $\times$ Log(GDP)"
+lab var womparl_gdp_5   "Women Parl. x Log(GDP)"
 
 sum loggdppc_5, d
 gen lowinc = loggdppc_5<`r(mean)'
@@ -113,7 +114,7 @@ lab var male_1549      "Male mortality (15-49 year-olds)"
 lab var tb_death_rate  "Tuberculosis Deaths (per 100,000 people)"
 lab var gdppc_5        "GDP per capita"
 lab var loggdppc_5     "log(GDP) per capita"
-lab var health_exp_5   "Health expenditure (\% of GDP)"
+lab var health_exp_5   "Health expenditure (% of GDP)"
 lab var year           "Year"
 
 local statform cells("count mean(fmt(2)) sd(fmt(2)) min(fmt(2)) max(fmt(2))")
@@ -121,11 +122,21 @@ local svar MMR MMR_b_DHS100_5 womparl_5 gdppc_5 loggdppc_5 democ_5 /*
 */ health_exp_5 yr_sch_impute male_1549 tb_death_rate 
 
 estpost sum `svar' 
-estout using "$OUT/MainSum.tex", replace label style(tex) `statform' 
+#delimit ;
+esttab using "$OUT/MainSum.csv", replace label `statform' nonumber
+ title(Summary Statistics) noobs;
+#delimit cr
 foreach year of numlist 1995 2000 2005 2010 {
     estpost sum `svar' if year==`year'
-    estout using "$OUT/Main`year'.tex", replace label style(tex) `statform' 
+    esttab using "$OUT/Main`year'.csv", replace label `statform' nonumber /*
+    */ title(Summary Statistics) noobs
 }
+estpost sum `svar' if lowinc==1 
+esttab using "$OUT/SumLowinc.csv", replace label `statform' nonumber /*
+*/ title(Summary Statistics) noobs
+estpost sum `svar' if lowinc==0
+esttab using "$OUT/SumHighinc.csv", replace label `statform' nonumber /*
+*/ title(Summary Statistics) noobs
 restore    
 
 ********************************************************************************
@@ -181,38 +192,19 @@ foreach num of numlist 3 2 1 5 4 {
    }
 }
 #delimit ;
-esttab est3 est2 est1 est5 est4 using "$OUT/MMRWomParl.tex", replace 
+esttab est3 est2 est1 est5 est4 using "$OUT/MMRWomParl.csv", replace 
 `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5)
 title("The Effect of Women in Parliament on Rates of Maternal Mortality") 
-style(tex) nomtitles booktabs nonumbers
-posthead("\multicolumn{6}{l}"
-	"{\textsc{Dependent variable}: Logarithm of maternal mortality ratio}"
-	"\\ &(1)&(2)&(3)&(4)&(5) \\ \midrule")
-postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                    "
-	 "Country and Year FE  & Y & Y & Y & Y & Y\\                          "
-	 "Controls             &   &   & Y & Y & Y\\                          "
-         "1995-2010 Only       &   &   &   & Y & Y \\                         "
-         "Health Expenditure   &   &   &   &   & Y \\ \bottomrule             "
-         "\multicolumn{6}{p{14.5cm}}{\begin{footnotesize}\textsc{Notes:}      "
-         "The estimation sample consists of all countries for which WDI       "
-         "maternal mortality data and full controls are available, with       "
-	 "quinquennial observations from 1990-2010 (inclusive) unless         "
-	 "otherwise indicated. Controls consist of the democracy score,       "
-	 "average female years of education, continent by year fixed effects, "
-         "and, where indicated, total health expenditure as a proportion of   "
-	 "GDP. The mean and standard deviation of the dependent variable in   "
-	 "the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the"
-	 "percent of women in parliament in the sample is `wommean'(`womsd'). "
-	 "The range of inflation and PPP adjusted log GDP per capita in the   "
-	 "sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When       "
-	 "included in the regression, this       "
-	 "variable has been standardised by subtracting the minimum value from"
-	 "each observation, so GDP and its interaction is interpreted as the  "
-	 "effect in the poorest country. Standard errors clustered by country "
-	 "are presented in parentheses, and stars refer to statistical        "
-	 "significance levels.   "
-         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}");
+nomtitles nonumbers delimiter(";") 
+posthead("Dependent variable: Logarithm of maternal mortality ratio"
+	 ";(1);(2);(3);(4);(5) ")
+postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                      "
+	 "Country and Year FE  ; Y ; Y ; Y ; Y ; Y                            "
+	 "Controls             ;   ;   ; Y ; Y ; Y                            "
+         "1995-2010 Only       ;   ;   ;   ; Y ; Y                            "
+         "Health Expenditure   ;   ;   ;   ;   ; Y                            "
+         "Notes: The estimation sample consists of all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd').  The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP and its interaction is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels."
+"***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 #delimit cr
 estimates clear
 restore
@@ -272,42 +264,18 @@ foreach c of local conds {
         }
 
 	#delimit ;
-	esttab est3 est2 est1 est5 est4 using "$OUT/MMRParl`1'.tex", replace 
-	`estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5 democ_5) nomtitles
+	esttab est3 est2 est1 est5 est4 using "$OUT/MMRParl`1'.csv", replace 
+	`estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5) nomtitles
 	title("Maternal Mortality Ratio and Women in Parliament (`topt' countries)") 
-	style(tex) booktabs nonumbers
-        posthead("\multicolumn{6}{l}"
-        	"{\textsc{Dependent variable}: Logarithm of maternal mortality ratio}"
-        	"\\ &(1)&(2)&(3)&(4)&(5) \\ \midrule")
-        postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\              "
-        	 "Country and Year FE  & Y & Y & Y & Y & Y\\                    "
-        	 "Controls             &   &   & Y & Y & Y\\                    "
-                 "1995-2010 Only       &   &   &   & Y & Y \\                   "
-                 "Health Expenditure   &   &   &   &   & Y \\ \bottomrule       "
-       		  "\multicolumn{6}{p{14.4cm}}{\begin{footnotesize}\textsc{Notes:}"
-     		       "The estimation sample consists of `topt' all countries  "
-		       "for which WDI maternal mortality data and full controls "
-		       "are available, with quinquennial observations from 1990-"
-		       "2010 (inclusive) unless otherwise indicated. The income "
-		       "status (high versus low) is defined based on median     "
-		       "income in the sample.  Controls consist of the democracy"
-		       "score, average female years of education, continent by  "
-		       "year fixed effects, and, where indicated, total health  "
-		       "expenditure as a proportion of GDP. The mean and        "
-		       "standard deviation of the dependent variable in the     "
-		       "1990-2010 sample is `depmean' and `depsd'. The mean (sd)"
-		       "for the percent of women in parliament in the sample is "
-		       "`wommean'(`womsd'). The range of inflation and PPP      "
-		       "adjusted log GDP per capita in the sample is from       "
-		       "`minGDP' (`mincc') to `maxGDP' (`maxcc'). When          "
-		       "included in the regression, this variable has been      "
-		       "standardised by subtracting the minimum value from each "
-		       "observation, so GDP and its interaction is interpreted  "
-		       "as the effect in the poorest country. Standard errors   "
-		       "clustered by country are presented in parentheses, and  "
-		       "stars refer to statistical significance levels.   "
-		       "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-	"\end{footnotesize}}\end{tabular}\end{table}");
+	nonumbers delimiter(";")
+	posthead("Dependent variable: Logarithm of maternal mortality ratio"
+        	";(1);(2);(3);(4);(5)") 
+        postfoot("Number of Countries  ;`c3';`c2';`c1';`c5';`c4'                "
+        	 "Country and Year FE  ; Y ; Y ; Y ; Y ; Y                      "
+        	 "Controls             ;   ;   ; Y ; Y ; Y                      "
+                 "1995-2010 Only       ;   ;   ;   ; Y ; Y                      "
+                 "Health Expenditure   ;   ;   ;   ;   ; Y                      "
+ 		 "The estimation sample consists of `topt' all countries for which WDI maternal mortality data and full controls are available, with quinquennial observations from 1990-2010 (inclusive) unless otherwise indicated. The income status (high versus low) is defined based on median income in the sample.  Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP and its interaction is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
 	#delimit cr
 	
 	estimates clear
@@ -355,7 +323,7 @@ foreach num of numlist 3 2 1 5 4 {
    }
 }
 #delimit ;
-esttab est3 est2 est1 est5 est4 using "$OUT/MMRWomParl_popln.tex", replace 
+esttab est3 est2 est1 est5 est4 using "$OUT/MMRWomParl_popln.csv", replace 
 `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5)
 title("The Effect of Women in Parliament on Rates of Maternal Mortality") 
 style(tex) nomtitles booktabs nonumbers
@@ -391,12 +359,13 @@ postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                    "
 #delimit cr
 estimates clear
 restore
-
+*/
 ********************************************************************************
-*** (4c) Replace WDI with DHS Measure
+*** (4d) Replace WDI with DHS Measure
 ********************************************************************************
 local dep "lMMR_DHS"
 preserve
+keep if year>=1990
 foreach num of numlist 3 2 1 5 4 { 
     qui eststo: xtreg `dep' `indep`num'', `se' fe
     local c`num' = e(N_g)
@@ -544,10 +513,10 @@ postfoot("Number of Countries  &`c3'&`c2'&`c1'&`c5'&`c4'\\                    "
 estimates clear
 restore
 
-
+exit
 
 ********************************************************************************
-*** (4d) Placebo tests
+*** (4e) Placebo tests
 ********************************************************************************
 lab var lmale_1549  "log(Mort)"
 lab var ltb_death_5 "log(TB)"

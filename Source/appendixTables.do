@@ -75,7 +75,7 @@ lab var womparl_gdp_5   "Women Parl. x Log(GDP)"
 sum loggdppc_5, d
 gen lowinc = loggdppc_5<`r(mean)'
 
-
+    
 ********************************************************************************
 *** (2b) Descriptive figures
 ********************************************************************************
@@ -124,7 +124,7 @@ local svar MMR MMR_b_DHS100_5 womparl_5 gdppc_5 loggdppc_5 democ_5 /*
 estpost sum `svar' 
 #delimit ;
 esttab using "$OUT/MainSum.csv", replace label `statform' nonumber
- title(Summary Statistics) noobs;
+ title(Summary Statistics) noobs delimit(";");
 #delimit cr
 foreach year of numlist 1995 2000 2005 2010 {
     estpost sum `svar' if year==`year'
@@ -133,10 +133,10 @@ foreach year of numlist 1995 2000 2005 2010 {
 }
 estpost sum `svar' if lowinc==1 
 esttab using "$OUT/SumLowinc.csv", replace label `statform' nonumber /*
-*/ title(Summary Statistics) noobs
+*/ title(Summary Statistics) noobs delimit(";")
 estpost sum `svar' if lowinc==0
 esttab using "$OUT/SumHighinc.csv", replace label `statform' nonumber /*
-*/ title(Summary Statistics) noobs
+*/ title(Summary Statistics) noobs delimit(";")
 restore    
 
 ********************************************************************************

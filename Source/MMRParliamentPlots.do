@@ -122,13 +122,16 @@ foreach y of varlist MMR TB MaleMortality {
 ********************************************************************************
 drop loggdppc_5
 gen loggdppc_5 = log(gdpppp1_5)
-
-collapse FDMMR FDwompar loggdppc_5 gdpppp1_5, by(country)
 sum loggdppc_5, d
 local median = r(p50)
-gen all = 1
+gen lowinc = loggdppc_5<`median'
 
-local conds all==1 loggdppc_5<`median' loggdppc_5>=`median'
+
+collapse FDMMR FDwompar loggdppc_5 gdpppp1_5 lowinc, by(country)
+replace lowinc = . if gdpppp1_5==.
+
+gen all = 1
+local conds all==1 lowinc==1 lowinc==0
 local names All LowGDP HighGDP
 
 
@@ -139,16 +142,15 @@ tokenize `names'
 foreach c of local conds {
     preserve
     keep if `c'
-    drop if country=="Equatorial Guinea"
-    drop if country=="Maldives"
 
     
     reg FDMMR FDwompar
     local Pcoef = _b[FDwompar]
     local Ptsta = _b[FDwompar]/_se[FDwompar]
     local Ppval = 1-ttail(e(N),`Ptsta')
-    local Ppval = round(`Ppval'*1000)/1000
-    local Pcval = round((`Pcoef'+0.001)*100)/100
+    local Ppval = string(`Ppval', "%5.3f")
+    local Pcval = round((`Pcoef')*100)/100
+    if `Pcval'==1 local Pcval 1.00
 
     local n1 "A 1 unit increase in representation is associated with a"
     local n2 " change in MMR (p-value = "

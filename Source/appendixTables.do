@@ -20,9 +20,6 @@ cap log close
 global DAT "~/investigacion/2013/WorldMMR/Data"
 global OUT "~/investigacion/2013/WorldMMR/Results/WomenParliament/Appendix"
 global LOG "~/investigacion/2013/WorldMMR/Log"
-global DAT "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Data"
-global OUT "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Results/WomenParliament/Appendix"
-global LOG "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Log"
 
 cap mkdir $OUT
 log using "$LOG/appendixTables.txt", text replace
@@ -495,9 +492,18 @@ foreach placebo of varlist lmale_1549 ltb_death_5 {
 	       drop `tv1'
 	   }
        }
-   }
+    }
+    if `i'==1 local ests est3 est2 est1 est5 est4
+    if `i'==2 local ests est8 est7 est6 est10 est9
+    if `i'==1 {
+        local cM = `c4'
+        local mM = `depmean'
+        local sM = `depsd'
+        local wM = `wommean'
+        local wsM = `womsd'
+    }
     #delimit ;
-    esttab est3 est2 est1 est5 est4 using "$OUT/Placebo_`name'.csv", replace 
+    esttab `ests' using "$OUT/Placebo_`name'.csv", replace 
     `estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5) nomtitles delimiter(";")
     title("Placebo Test using `note' as the Dependent Variable") nonumbers
     posthead("Dependent variable: Logarithm of `note'"
@@ -507,13 +513,25 @@ foreach placebo of varlist lmale_1549 ltb_death_5 {
 	     "Controls             ;   ;   ; Y ; Y ; Y                        "
              "1995-2010 Only       ;   ;   ;   ; Y ; Y                        "
              "Health Expenditure   ;   ;   ;   ;   ; Y                        "
-"Placebo tests run identical specifications as those in table 2 of  the main paper, however replace the log of MMR (a woman-specific health outcome, with the log of a male, or gender neutral health outcome. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
+"Placebo tests run identical specifications as those in table 1 of the main paper, however replace the log of MMR (a woman-specific health outcome, with the log of a male, or gender neutral health outcome. Controls consist of the democracy score, average female years of education, continent by year fixed effects, and, where indicated, total health expenditure as a proportion of GDP. The mean and standard deviation of the dependent variable in the 1990-2010 sample is `depmean' and `depsd'. The mean (sd) for the percent of women in parliament in the sample is `wommean'(`womsd'). The range of inflation and PPP adjusted log GDP per capita in the sample is from `minGDP' (`mincc') to `maxGDP' (`maxcc'). When included in the regression, this variable has been standardised by subtracting the minimum value from each observation, so GDP is interpreted as the effect in the poorest country. Standard errors clustered by country are presented in parentheses, and stars refer to statistical significance levels. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.");
     #delimit cr
-
-    estimates clear
+    
     local ++i
     restore
 }
+
+#delimit ;
+esttab est9 est4 using "$OUT/PlaceboTogether.csv", replace 
+`estopt' keep(womparl_5 loggdppc_5 womparl_gdp_5) delimiter(";")
+title("Placebo Tests using Gender Neutral Disease Burden")
+mtitles("ln(TB Deaths)" "ln(Male Mortality)")
+postfoot("Number of Countries  ;`c4';`cM'"
+         "Mean of Dependent Variable  ;`depmean';`mM'"
+         "Std Dev of Dependent Variable  ;`depsd';`sM'"
+         "Mean of Women Parl in Sample;`wommean';`wM'"
+         "Std Dev of Women Parl in Sample;`womsd';`wsM'"         
+"Placebo tests run identical specifications as those in table 1 of the main paper, however replace the log of MMR (a woman-specific health outcome, with the log of a male, or gender neutral health outcome. Controls consist of the full set displayed in column 5 of table 1 and the country sample is identical.  The sample of years for the rates of tuberculosis death consists of 1995, 2000, 2005 and 2010, while male mortality (15-49) is available for 1995, 2000 and 2005.  Standard errors clustered by country are presented in parentheses.  All estimates presented have $ p>0.1. $");
+    #delimit cr
 
 
 

@@ -19,9 +19,7 @@ cap log close
 global DAT "~/investigacion/2013/WorldMMR/Data"
 global OUT "~/investigacion/2013/WorldMMR/Results/WomenParliament"    
 global LOG "~/investigacion/2013/WorldMMR/Log"
-global DAT "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Data"
-global OUT "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Results/WomenParliament"    
-global LOG "/media/ubuntu/Impar/investigacion/2013/WorldMMR/Log"
+
 
 log using "$LOG/MMRParliamentPlots.txt", text replace
 
@@ -77,7 +75,7 @@ foreach num of numlist 1(1)`nQ' {
     gen wparlXquant`num' = GDPquantile`num'*womparl_5
 }
 
-local controls democ_5 health_exp_5 i.contcode#i.year
+local controls democ_5 health_exp_5 yr_sch_impute i.contcode#i.year
 
 drop MMR
 gen MMR = lMMR
@@ -208,3 +206,9 @@ dis "In total, a 1 IQR increase (`iqrval') of women in parliament in low income
      countries would reduce MMR by `change'% (approximately).  This explains
      `WomenExplain' of the entire reduction required needed to achieve the SDGs.";
 #delimit cr
+
+dis 230.22*`change'
+dis 417.98-213.96
+
+dis (230.22*`change')/(417.98-213.96)
+

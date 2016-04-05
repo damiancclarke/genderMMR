@@ -3,8 +3,7 @@
 
   Alternative specifications and tests reported for the paper "Women's Political
 Representation and Maternal Mortality: Cross-National, Longitudinal Analysis of
-150 Countries between 1990-2010".
-
+156 Countries between 1990-2010".
 */
 
 vers 11
@@ -135,6 +134,29 @@ estpost sum `svar' if lowinc==0
 esttab using "$OUT/SumHighinc.csv", replace label `statform' nonumber /*
 */ title(Summary Statistics) noobs delimit(";")
 restore    
+
+********************************************************************************
+*** (2d) Interquartile values for the paper
+********************************************************************************
+qui reg lMMR womparl_5 loggdppc_5 democ_5 health_exp_5 yr_sch_impute
+preserve
+keep if e(sample)
+
+qui sum MMR, d
+dis "MMR mean is `r(mean)' and IQR is `r(p25)' - `r(p75)'"
+qui sum MMR if lowinc==1, d
+dis "MMR mean in low income is `r(mean)' and IQR is `r(p25)'-`r(p75)'"
+qui sum MMR if lowinc==0, d
+dis "MMR mean in high income is `r(mean)' and IQR is `r(p25)'-`r(p75)'"
+qui sum womparl_5, d
+dis "womparl mean is `r(mean)' and IQR is `r(p25)'-`r(p75)'"
+qui sum womparl_5 if lowinc==1, d
+dis "womparl mean in low income is `r(mean)' and IQR is `r(p25)'-`r(p75)'"
+qui sum womparl_5 if lowinc==0, d
+dis "womparl mean in high income is `r(mean)' and IQR is `r(p25)'-`r(p75)'"
+
+restore
+
 
 ********************************************************************************
 *** (3) Set locals

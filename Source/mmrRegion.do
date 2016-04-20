@@ -43,9 +43,9 @@ local Ecreate  0
 local Wcreate  0
 local Ccreate  0
 local yearGen  1
-local regionL  1
+local regionL  0
 local religion 0
-local country  0
+local country  1
 local covarGen 1
 local afroBar  1
 
@@ -335,7 +335,7 @@ if `yearGen' == 1 {
     clear
     append using `allfiles'
 
-    save "$OUT/MMyears`fname'"
+    save "$OUT/MMyears`fname'", replace
 }
 
 ********************************************************************************
@@ -376,13 +376,13 @@ if `yearGen' == 1 {
 
     gen years = .
     local j = 1
-    foreach yy of numlist 1970(5)2010 {
+    foreach yy of numlist 1968(5)2008 {
         local yu = `yy'+5
         replace years = `j' if year>=`yy'&year<`yu'
         local ++j
     }
-    lab def yrs 1 "1970-1974" 2 "1975-1979" 3 "1980-1984" 4 "1985-1989" 5 /*
-    */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
+    lab def yrs 1 "1968-1972" 2 "1973-1977" 3 "1978-1982" 4 "1983-1987" 5 /*
+    */ "1988-1992" 6 "1993-1997" 7 "1998-2002" 8 "2003-2007" 9 "2007-2012" 
     lab val years yrs
     lab var years "5 year period"
     collapse MMR MMrate birth, by(`group' years)
@@ -688,7 +688,8 @@ if `covarGen' == 1 {
     merge 1:m `agrp' using "$OUT/mmr`fname'"
     keep if _merge==3
     drop _merge
-    
+
+    if `country'==1 drop if MMR==0
     save "$OUT/mmr`fname'Med_covars", replace
 }
 

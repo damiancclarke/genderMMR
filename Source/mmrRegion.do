@@ -41,19 +41,26 @@ local Mcreate  0
 local Fcreate  0
 local Ecreate  0
 local Wcreate  0
-local Ccreate  1
-local yearGen  0
-local regionL  0
+local Ccreate  0
+local yearGen  1
+local regionL  1
+local religion 0
 local country  0
-local covarGen 0
-local afroBar  0
+local covarGen 1
+local afroBar  1
 
 local group _cou _year region v101
-local file Regions
+local mgrp  _cou _year mv101
+local cgrp  _cou birthYear v101
+local agrp  _cou _year v101
+local fname Regions
 
 if `country'==1 {
-    local group _cou
-    local file Country
+    local group _cou _year
+    local mgrp  _cou _year 
+    local cgrp  _cou birthYear 
+    local agrp  _cou _year
+    local fname Country
 }
 
 ********************************************************************************
@@ -202,7 +209,7 @@ if `Ccreate' == 1 {
         count
         #delimit ;
         keep _cou _year v005 v101 v102 m2a_* m2b_* m2d_* m2n_* m3a_* m3b_*
-            m3d_* m3n_* b2_01-b2_06
+            m3d_* m3n_* b2_01-b2_06;
 
         #delimit cr
         foreach num of numlist 1(1)6 {
@@ -228,7 +235,7 @@ if `Ccreate' == 1 {
         gen healthAttend  = m3d_==1 if m3d_!=9 & m3d_!=.
         gen noneAttend    = m3n_==1 if m3n_!=9 & m3n_!=.
         gen urban         = v102 == 1
-        drop mother v102
+        drop mo v102
         
         save `Cf`file''
     }
@@ -328,7 +335,7 @@ if `yearGen' == 1 {
     clear
     append using `allfiles'
 
-    save "$OUT/MMyears"
+    save "$OUT/MMyears`fname'"
 }
 
 ********************************************************************************
@@ -342,9 +349,9 @@ if `yearGen' == 1 {
     gen birth    = fertility/exposure
     keep if age>14&age<50
 
-    collapse birth, by(_cou v101 _year)    
+    collapse birth, by(`group')    
  
-    merge 1:m _cou v101 _year using "$OUT/MMyears"
+    merge 1:m `agrp' using "$OUT/MMyears`fname'"
     keep if _merge==3
     drop _merge
     
@@ -355,8 +362,8 @@ if `yearGen' == 1 {
     lab var birth  "Births per woman per year"
     lab var MMrate "Maternal mortality rate (deaths per 1,000 women)"
     
-    lab dat "Unaltered MMR and MMrate by country, region and year"
-    save "$OUT/mmr`file'Year", replace
+    lab dat "Unaltered MMR and MMrate by geographic area and year"
+    save "$OUT/mmr`fname'Year", replace
 
     keep if MMR!=.
     gen nonZeroMMR=year if MMR!=0
@@ -378,10 +385,10 @@ if `yearGen' == 1 {
     */ "1990-1994" 6 "1995-1999" 7 "2000-2004" 8 "2005-2009" 9 "2010+" 
     lab val years yrs
     lab var years "5 year period"
-    collapse MMR MMrate birth, by(_cou _year v101 years)
+    collapse MMR MMrate birth, by(`group' years)
     
-    lab dat "Unaltered MMR and MMrate by country, region and 5 year period"
-    save "$OUT/mmr`file'", replace
+    lab dat "Unaltered MMR and MMrate by geographic area and 5 year period"
+    save "$OUT/mmr`fname'", replace
 }
 
 ********************************************************************************
@@ -550,8 +557,9 @@ if `regionL' == 1 {
     drop _merge
 
     save "$OUT/mmrRegions", replace
+}
 
-    ***RELIGION NAMES:
+if `religion'==1 {
     tokenize `COU'
     local j = 1
     foreach survey of local SUR {
@@ -598,7 +606,7 @@ if `regionL' == 1 {
 ********************************************************************************
 if `covarGen' == 1 {
     use "$OUT/Microbase_Male_year"
-    collapse maleViolence* maleEduc* [pw=mv005], by(_cou _year mv101)
+    collapse maleViolence* maleEduc* [pw=mv005], by(`mgrp')
 
     lab var maleViolence_a "Wife beating justified if goes out without telling"
     lab var maleViolence_b "Wife beating justified if neglects children"
@@ -606,13 +614,13 @@ if `covarGen' == 1 {
     lab var maleViolence_d "Wife beating justified if she refuses sex"
     lab var maleViolence_e "Wife beating justified if she burns food"
     lab var maleEducation  "Average Male Education (years)"
-    rename mv101 v101
+    cap rename mv101 v101
     
     tempfile MaleYears
     save `MaleYears'
 
     use "$OUT/Microbase_Child_year"
-    collapse *Prenate *Attend [pw=v005], by(_cou birthYear v101)
+    collapse *Prenate *Attend [pw=v005], by(`cgrp')
     lab var doctorPrenate "Any Prenatal Care by Doctor"
     lab var nursePrenate  "Any Prenatal Care by Nurse"
     lab var healthPrenate "Any Prenatal Care by Other Trained Health worker"
@@ -621,7 +629,10 @@ if `covarGen' == 1 {
     lab var nurseAttend   "Birth Attended by by Nurse"
     lab var healthAttend  "Birth Attended by by Other Trained Health worker"
     lab var noneAttend    "Birth not attended by anyone"
+    tostring birthYear, generate(_year)
 
+    tempfile ChildYears
+    save `ChildYears'
 
     use "$OUT/Microbase_Female_year"
     drop religion
@@ -650,11 +661,10 @@ if `covarGen' == 1 {
     replace muslim=    0 if muslim    !=1 & religion!=""
     replace christian= 0 if christian !=1 & religion!=""
     replace protestant=0 if protestant!=1 & religion!=""
-    
-    
+
 
     collapse female* wealth* urban muslim christian protestant [pw=v005], /*
-    */ by(_cou _year v101)
+    */ by(`agrp')
 
     lab var femaleViolence_a "Wife beating justified if goes out without telling"
     lab var femaleViolence_b "Wife beating justified if neglects children"
@@ -669,14 +679,17 @@ if `covarGen' == 1 {
     lab var wealthInd4       "Proportion in wealth quintile 4"
     lab var wealthInd5       "Proportion in wealth quintile 5"
 
-    merge 1:1 _cou _year v101 using `MaleYears'
+    merge 1:1 `agrp' using `MaleYears'
     drop _merge
 
-    merge 1:m _cou _year v101 using "$OUT/mmrRegions"
+    merge 1:1 `agrp' using `ChildYears'
+    drop _merge
+
+    merge 1:m `agrp' using "$OUT/mmr`fname'"
     keep if _merge==3
     drop _merge
     
-    save "$OUT/mmrRegions_covars", replace
+    save "$OUT/mmr`fname'Med_covars", replace
 }
 
 ********************************************************************************
@@ -690,13 +703,13 @@ local cc Gabon Benin Burkina-Faso Burundi Cameroon Cote-d-Ivoire Kenya Liberia
 #delimit cr
 
 if `afroBar'==1 {
-    use "$OUT/mmrRegions_covars"
+    use "$OUT/mmr`fname'Med_covars"
     cap gen afroBarometer = 0
     foreach cname of local cc {
         replace afroBarometer = 1 if _cou=="`cname'"
     }
     lab dat "DHS Regional Measures: MMR; Education, Wealth"
-    save "$OUT/mmrRegions_covars", replace
+    save "$OUT/mmr`fname'Med_covars", replace
 }
    
 ********************************************************************************

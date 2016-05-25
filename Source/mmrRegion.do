@@ -41,13 +41,13 @@ local Mcreate  0
 local Fcreate  0
 local Ecreate  0
 local Wcreate  0
-local Ccreate  0
-local yearGen  1
+local Ccreate  1
+local yearGen  0
 local regionL  0
 local religion 0
-local country  1
-local covarGen 1
-local afroBar  1
+local country  0
+local covarGen 0
+local afroBar  0
 
 local group _cou _year region v101
 local mgrp  _cou _year mv101
@@ -209,7 +209,7 @@ if `Ccreate' == 1 {
         count
         #delimit ;
         keep _cou _year v005 v101 v102 m2a_* m2b_* m2d_* m2n_* m3a_* m3b_*
-            m3d_* m3n_* b2_01-b2_06;
+            m3d_* m3n_* b2_01-b2_06 v190 v191 v133 v012;
 
         #delimit cr
         foreach num of numlist 1(1)6 {

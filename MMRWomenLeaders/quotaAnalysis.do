@@ -27,11 +27,12 @@ drop if not_country==1
 keep if womparl!=.
 keep country womparl year
 keep if year>=1990
-
 merge 1:1 country year using "MMR", gen(_mergeMMR)
 merge 1:1 country year using "GDP", gen(_mergeGDP)
+merge 1:1 country year using "population", gen(_mergepop)
 drop if year<1990
 merge m:1 country using quotasComplete
+bys country: egen pop=mean(sp_pop_totl)
 
 *-------------------------------------------------------------------------------
 *--- (3) Basic regressions
@@ -60,14 +61,18 @@ gen quotaRxlnGDP = quotaRes*lnGDP
 gen quotaCxlnGDP = quotaCand*lnGDP
 
 xtreg womparl quota lnGDP i.year, fe cluster(ccode)
-xtreg womparl quotaRes i.year, fe cluster(ccode)
+xtreg womparl quotaRes lnGDP i.year, fe cluster(ccode)
 xtreg womparl quotaCan i.year, fe cluster(ccode)
-exit
+
 xtreg lnMMRt1 quotaRes lnGDP  i.year, fe cluster(ccode)
 xtreg lnMMRt1 quotaCan lnGDP  i.year, fe cluster(ccode)
-exit
+
 *ivreg2 lnMMRt1 lnGDP i.ccode i.year (womparl womparx = quota quotax), /*
 **/ partial(i.ccode i.year) cluster(ccode)
+
+eststo: xtreg womparl quota lnGDP i.year, fe cluster(ccode)
+eststo: xtreg womparl quotaRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg womparl quotaCan lnGDP i.year, fe cluster(ccode)
 
 *-------------------------------------------------------------------------------
 *--- (4) Event Study Women in Parliament
@@ -132,9 +137,6 @@ drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead*
 *-------------------------------------------------------------------------------
 *--- (4) Event Study MMR
 *-------------------------------------------------------------------------------
-
-
-
 bys country: egen meanGDP = mean(lnGDP)
 *sum meanGDP, d
 *keep if meanGDP<=r(p75)
@@ -264,9 +266,6 @@ drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead*
 *-------------------------------------------------------------------------------
 *--- (4) Event Study MMR
 *-------------------------------------------------------------------------------
-
-
-
 bys country: egen meanGDP = mean(lnGDP)
 *sum meanGDP, d
 *keep if meanGDP<=r(p75)

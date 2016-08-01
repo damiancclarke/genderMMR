@@ -30,6 +30,8 @@ keep if year>=1990
 merge 1:1 country year using "MMR"         , gen(_mergeMMR)
 merge 1:1 country year using "GDP"         , gen(_mergeGDP)
 merge 1:1 country year using "population"  , gen(_mergepop)
+merge 1:1 country year using "mechanisms"  , gen(_mergeMec)
+
 drop if year<1990
 merge m:1 country using quotasComplete
 bys country: egen pop=mean(sp_pop_totl)
@@ -47,6 +49,7 @@ gen lnTBt1       = log(TBt1)
 gen womparxlnGDP = womparl*lnGDP
 replace quotayear=. if quotayear==2013
 
+
 gen quota = year>quotayear
 encode country, gen(ccode)
 encode region, gen(rcode)
@@ -57,6 +60,7 @@ xtreg lnMMRt1 womparl lnGDP         i.year, fe cluster(ccode)
 xtreg lnMMRt1 womparl lnGDP womparx i.year, fe cluster(ccode)
 
 
+
 gen quotaxlnGDP  = quota*lnGDP
 gen quotaRes     = quotatype!="Legislated Candidate Quota"&quota==1
 gen quotaCand    = quotatype=="Legislated Candidate Quota"&quota==1
@@ -65,23 +69,38 @@ gen quotaCxlnGDP = quotaCand*lnGDP
 gen qVal         = quota*quotapercent1
 gen qResVal      = quotaRes*quotapercent1
 gen qCanVal      = quotaCan*quotapercent1
+foreach var of varlist quota quotaRes {
+    gen `var'p1_4=`var'==1&(year-quotayear>0)&(year-quotayear<=4)
+    gen `var'p5_8=`var'==1&(year-quotayear>4)&(year-quotayear<=8)
+    gen `var'p9_12=`var'==1&(year-quotayear>8)&(year-quotayear<=12)
+    gen `var'p13=`var'==1&(year-quotayear>12)&quotayear!=.
+}
+gen quotaLower = quota==1&parliament=="Bicameral"&(quotapercent1!=0&quotapercent1!=.)
+gen quotaUpper = quota==1&parliament=="Bicameral"&(quotapercent2!=0&quotapercent2!=.)
+gen quotaUni   = quota==1&parliament=="Unicameral"
+gen reservedLower = quotaLower*quotaRes
+gen reservedUpper = quotaUpper*quotaRes
+gen reservedUni   = quotaUni*quotaRes
+
 
 
 xtreg womparl quota lnGDP i.year, fe cluster(ccode)
 xtreg womparl quotaRes lnGDP i.year, fe cluster(ccode)
 xtreg womparl qResVal lnGDP i.year, fe cluster(ccode)
-xtreg womparl quotaCan i.year, fe cluster(ccode)
+xtreg womparl quotaCand i.year, fe cluster(ccode)
 xtreg womparl qCanVal i.year, fe cluster(ccode)
+
 
 
 xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
 xtreg lnMMRt1 qResVal  lnGDP i.year , fe cluster(ccode)
-xtreg lnMMRt1 quotaCan lnGDP i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaCand lnGDP i.year, fe cluster(ccode)
 
 xtreg lnTBt1 quotaRes lnGDP  i.year, fe cluster(ccode)
-xtreg lnTBt1 quotaCan lnGDP  i.year, fe cluster(ccode)
+xtreg lnTBt1 quotaCand lnGDP  i.year, fe cluster(ccode)
 *ivreg2 lnMMRt1 lnGDP i.ccode i.year (womparl womparx = quota quotax), /*
 **/ partial(i.ccode i.year) cluster(ccode)
+
 
 qui xtreg lnMMRt1  quota lnGDP i.year, fe cluster(ccode)
 preserve
@@ -104,6 +123,7 @@ lab var lnTBt1 "ln(TB)"
 lab var quota "Any Quotas"
 lab var quotaRes "Quota (reserved)"
 lab var quotaCan "Quota (candidates)"
+
 
 #delimit ;
 esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/Quota.tex",
@@ -128,8 +148,6 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
 #delimit cr
 estimates clear
 
-qui xtreg lnMMRt1  quota lnGDP i.year, fe cluster(ccode)
-
 eststo: xtreg womparl qVal lnGDP i.year, fe cluster(ccode)
 eststo: xtreg lnMMRt1 qVal lnGDP i.year, fe cluster(ccode)
 eststo: xtreg lnTBt1  qVal lnGDP i.year, fe cluster(ccode)
@@ -153,23 +171,56 @@ esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaVals.tex",
 replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
-keep(qVal qCanVal qResVal) title("Gender Quotas, Women in Parliament and Health")
+keep(qVal qCanVal qResVal) title("Size of Gender Quota, Women in Parliament and Health")
 mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
 postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
          "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
-         "is coded from the quotaproject.org, recording whether each country has"
-         " a quota, and if so its year of implementation.  Reserved Seats refers"
-         " only to those countries where a fixed proportion of representation is"
-         " guaranteed for women with binding sanctions in place. Candidate quota"
-         " refers to those countries where submitted candidate lists must comply"
-         " with a minimum proportion of women (or each gender), but where there "
-         "are no guarantees for representation in parliament. Standard errors   "
+         "is coded from the quotaproject.org, recording the size of the quota in "
+         "percent of reserved seats or candidates on the ballot. Coefficients are"
+         " interpreted as the effect of increasing the quota by an additional 1\%."
+         " Standard errors "
          "clustered at the level of the country are reported in parentheses.    "
          "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
+
+
+
+eststo: xtreg lnMMRt1 quotaRes      , fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes lnGDP i.rcode#c.year i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes lnGDP i.ccode#c.year i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qRes      , fe cluster(ccode)
+eststo: xtreg lnMMRt1 qRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qRes lnGDP i.rcode#c.year i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qRes lnGDP i.ccode#c.year i.year, fe cluster(ccode)
+
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 est8 using "$OUT/QuotaAlternative.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(quotaRes qResVal)
+title("Gender Quotas, Women in Parliament and Health (Various Specifications)")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 0 1 0 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country FE & Y & Y & Y & Y & Y & Y & Y & Y  \\                         "
+         "Year FE    &   & Y & Y & Y &   & Y & Y & Y  \\                         "
+         "Regional Trends &   &  & Y &  &   &  & Y &   \\                        "
+         "Country Trends  &   &  &   & Y &   &  &  & Y   \\                      "
+         "\bottomrule\multicolumn{9}{p{19.2cm}}{\begin{footnotesize} Both MMR    "
+         "and TB are recorded as deaths per 100,000 events.  For MMR, this is    "
+         "deaths per 100,000 live births, while for TB this is deaths per 100,000"
+         " population. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.     "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
 
 
 eststo: xtreg womparl quota lnGDP i.year, fe cluster(ccode)
@@ -191,7 +242,7 @@ esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaLevels.tex"
 replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
-keep(quota quotaCand quotaRes) title("Gender Quotas, Women in Parliament and Health")
+keep(quota quotaCand quotaRes) title("Gender Quotas, Women in Parliament and Health (not in logs)")
 mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
 postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
@@ -204,6 +255,165 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
+
+local quotat quotap1_4 quotap5_8 quotap9_12 quotap13
+local cntrl  lnGDP 
+eststo: xtreg womparl `quotat' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotat' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotat' `cntrl' i.year, fe cluster(ccode)
+
+eststo: xtreg womparl quotaResp* `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaResp* `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaResp* `cntrl' i.year, fe cluster(ccode)
+
+lab var womparl "\% Women"
+lab var lnMMRt1 "ln(MMR)"
+lab var lnTBt1 "ln(TB)"
+lab var quotap1_4 "Quota (1-4 years)"
+lab var quotap5_8 "Quota (5-8 years)"
+lab var quotap9_12 "Quota (9-12 years)"
+lab var quotap13 "Quota ($>$ 13  years)"
+lab var quotaResp1_4 "Reserved Seats (1-4 years)"
+lab var quotaResp5_8 "Reserved Seats (5-8 years)"
+lab var quotaResp9_12 "Reserved Seats (9-12 years)"
+lab var quotaResp13 "Reserved Seats ($>$ 13 years)"
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaDynamics.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(`quotat' quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13)
+title("Dynamic Effects of Gender Quotas on Women in Parliament and Health")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{7}{p{15.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+local quotat quotaLower quotaUpper quotaUni
+local cntrl  lnGDP 
+eststo: xtreg womparl `quotat' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotat' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotat' `cntrl' i.year, fe cluster(ccode)
+
+local reservet reservedLower reservedUpper reservedUni
+eststo: xtreg womparl `reservet' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `reservet' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `reservet' `cntrl' i.year, fe cluster(ccode)
+
+lab var womparl "\% Women"
+lab var lnMMRt1 "ln(MMR)"
+lab var lnTBt1 "ln(TB)"
+lab var quotaLower "Quota (Lower Chamber)"
+lab var quotaUpper "Quota (Upper Chamber)"
+lab var quotaUni   "Quota (Unicameral)"
+lab var reservedLower "Reserved Seats (Lower Chamber)"
+lab var reservedUpper "Reserved Seats (Upper Chamber)"
+lab var reservedUni   "Reserved Seats (Unicameral)"
+
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaType.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(`quotat' `reservet')
+title("Effects of Gender Quotas at Different Levels on Women in Parliament and Health")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{7}{p{16.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, whether the parliament in uni-cameral or bi-cameral, and if "
+         "the parliament is bi-cameral in which house of parliament the quota is"
+         " in place.  Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+eststo: xtreg antenatal   quota lnGDP i.year, fe cluster(ccode)
+eststo: xtreg birthAttend quota lnGDP i.year, fe cluster(ccode)
+eststo: xtreg teenPreg    quota lnGDP i.year, fe cluster(ccode)
+
+eststo: xtreg antenatal   quotaRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg birthAttend quotaRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg teenPreg    quotaRes lnGDP i.year, fe cluster(ccode)
+
+lab var antenatal   "Antenatal"
+lab var birthAttend "Attendance"
+lab var teenPreg    "Teen Preg"
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaMechanism.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(quota quotaRes)
+title("Mechanism Tests: Quotas and Health Policies")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{7}{p{16.8cm}}{\begin{footnotesize} Health     "
+         " information comes from the most complete set of measures available   "
+         "from the World Bank databank.  Antenatal refers to the percent of     "
+         " pregnant women receiving antenatal care, "
+         "Attendance refers to the percent of births attended by skilled health "
+         "staff, and Teen preg refers to the adolescent fertility rate per 1,000"
+         "women aged 15-19.  Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+local quotat quotap1_4 quotap5_8 quotap9_12 quotap13
+local cntrl  lnGDP 
+eststo: xtreg antenatal   `quotat' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg birthAttend `quotat' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg teenPreg    `quotat' `cntrl' i.year, fe cluster(ccode)
+
+eststo: xtreg antenatal   quotaResp* `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg birthAttend quotaResp* `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg teenPreg    quotaResp* `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaMechanismsDynamics.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(`quotat' quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13)
+title("Dynamic Mechanism Tests: Quotas and Health Policies")
+mgroups("Any Quota" "Reserved Seats", pattern(1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                           "
+         "\bottomrule\multicolumn{7}{p{17.8cm}}{\begin{footnotesize} Health     "
+         " information comes from the most complete set of measures available   "
+         "from the World Bank databank.  Antenatal refers to the percent of     "
+         " pregnant women receiving antenatal care, "
+         "Attendance refers to the percent of births attended by skilled health "
+         "staff, and Teen preg refers to the adolescent fertility rate per 1,000"
+         "women aged 15-19.  Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
 
 restore
 

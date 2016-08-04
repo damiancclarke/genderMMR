@@ -52,6 +52,9 @@ gen lnGDP        = log(ny_gdp)
 gen lnTBt1       = log(TBt1)
 gen womparxlnGDP = womparl*lnGDP
 replace quotayear=. if quotayear==2013
+bys country: egen aveGDP = mean(lnGDP)
+sum aveGDP, d
+gen lowGDP = aveGDP<=r(p50)
 
 
 gen quota = year>quotayear
@@ -100,7 +103,7 @@ lab var lnGDP     "ln(GDP per capita)"
 lab var quotapercent1 "Quota Size (lower house/uni-cameral)"
 lab var quotapercent2 "Quota Size (upper house)"
 replace quotapercent2=. if quotapercent2==0
-
+/*
 preserve
 keep if lnMMRt1!=.
 #delimit ;
@@ -151,7 +154,7 @@ estout using "quotas/sum_Noquota.tex", replace label style(tex) `statform'
 restore
 
 exit
-
+*/
 
 
 
@@ -200,6 +203,82 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
+
+local cnd if lowGDP==1
+eststo: xtreg womparl quota lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnMMRt1 quota lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnTBt1  quota lnGDP i.year `cnd', fe cluster(ccode)
+
+eststo: xtreg womparl quotaRes lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaRes lnGDP i.year `cnd', fe cluster(ccode)
+
+eststo: xtreg womparl quotaCand lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaCand lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaCand lnGDP i.year `cnd', fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaLowGDP.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(quota quotaCand quotaRes)
+title("Gender Quotas, Women in Parliament and Health (GDP $\leq$ Median)")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Candidate quota"
+         " refers to those countries where submitted candidate lists must comply"
+         " with a minimum proportion of women (or each gender), but where there "
+         "are no guarantees for representation in parliament. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+local cnd if lowGDP==0
+eststo: xtreg womparl quota lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnMMRt1 quota lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnTBt1  quota lnGDP i.year `cnd', fe cluster(ccode)
+
+eststo: xtreg womparl quotaRes lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaRes lnGDP i.year `cnd', fe cluster(ccode)
+
+eststo: xtreg womparl quotaCand lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaCand lnGDP i.year `cnd', fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaCand lnGDP i.year `cnd', fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaHighGDP.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(quota quotaCand quotaRes)
+title("Gender Quotas, Women in Parliament and Health (GDP $>$ Median)")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Candidate quota"
+         " refers to those countries where submitted candidate lists must comply"
+         " with a minimum proportion of women (or each gender), but where there "
+         "are no guarantees for representation in parliament. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
 
 sum lnGDP
 gen lnGDP2 = lnGDP-r(min)

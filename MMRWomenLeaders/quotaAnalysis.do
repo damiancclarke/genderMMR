@@ -29,7 +29,7 @@ use "$DAT/LangGender_dataset.dta", clear
 drop if not_country==1
 keep if womparl!=.
 
-keep country womparl year tb_death_rate yr_sch_impute democ health_exp contcode
+keep country womparl year tb_death_rate yr_sch democ health_exp contcode MMR_b_DHS100
 keep if year>=1990
 merge 1:1 country year using "MMR"          , gen(_mergeMMR)
 merge 1:1 country year using "MMR_5yr"      , gen(_mergeMM5)
@@ -42,6 +42,7 @@ merge 1:1 country year using "malemortality", gen(_mergemMo)
 merge m:1 country using quotasComplete
 replace quotayear = 2005 if country=="Uganda"
 
+
 *-------------------------------------------------------------------------------
 *--- (3) Setup
 *-------------------------------------------------------------------------------
@@ -50,8 +51,11 @@ rename MMR MMR5
 gen lnGDP  = log(ny_gdp)
 
 sort country year
-bys country: ipolate yr_sch_impute year, gen(yrs_school)
+bys country: ipolate yr_sch year, gen(yrs_school) epolate
+bys country: ipolate health_exp year, gen(healthExpenditure) epolate
+bys country: ipolate democ year, gen(democracy) epolate
 bys country: gen  MMRt1   = sh_sta_mmrt[_n+2]
+bys country: gen  MMRt1DHS= MMR_b_DHS100[_n+2]
 bys country: gen  fertt1  = fert[_n+2]
 bys country: gen  mmortt1 = maleMort[_n+1]
 bys country: gen  TBt1    = tb_death_rate[_n+1]
@@ -59,6 +63,7 @@ bys country: egen pop     =mean(sp_pop_totl)
 bys country: egen aveGDP  = mean(lnGDP)
 
 gen lnMMRt1       = log(MMRt1)
+gen lnMMRt1DHS    = log(MMRt1DHS)
 gen lnTBt1        = log(TBt1)
 gen lnfertt1      = log(fertt1)
 gen lnmmortt1     = log(mmortt1)
@@ -79,12 +84,21 @@ gen quotaCand    = quotatype=="Legislated Candidate Quota"&quota==1
 gen qVal         = quota*quotapercent1
 gen qResVal      = quotaRes*quotapercent1
 gen qCanVal      = quotaCan*quotapercent1
+bys country: egen quotaResC = max(quotaRes)
+bys country: egen quotaCandC = max(quotaCand)
 foreach var of varlist quota quotaRes quotaCand {
     gen `var'p1_4=`var'==1&(year-quotayear>0)&(year-quotayear<=4)
     gen `var'p5_8=`var'==1&(year-quotayear>4)&(year-quotayear<=8)
     gen `var'p9_12=`var'==1&(year-quotayear>8)&(year-quotayear<=12)
     gen `var'p13=`var'==1&(year-quotayear>12)&quotayear!=.
 }
+foreach var of varlist quotaRes quotaCand {
+    gen `var'n1_4=`var'C==1&(quotayear-year>=2)&(quotayear-year<=4)
+    gen `var'n5_8=`var'C==1&(quotayear-year>4)&(quotayear-year<=8)
+    gen `var'n9_12=`var'C==1&(quotayear-year>8)&(quotayear-year<=12)
+    gen `var'n13=`var'C==1&(quotayear-year>12)&quotayear!=.
+}
+drop quotaResC quotaCandC
 gen quotaLower = quota==1&parl=="Bicameral"&(quotapercent1!=0&quotapercent1!=.)
 gen quotaUpper = quota==1&parl=="Bicameral"&(quotapercent2!=0&quotapercent2!=.)
 gen quotaUni   = quota==1&parl=="Unicameral"
@@ -114,13 +128,41 @@ lab var quotaResp1_4   "Reserved Seats (1-4 years)"
 lab var quotaResp5_8   "Reserved Seats (5-8 years)"
 lab var quotaResp9_12  "Reserved Seats (9-12 years)"
 lab var quotaResp13    "Reserved Seats ($>$ 12 years)"
+lab var quotaCandn1_4  "Candidates (1-4 years prior)"
+lab var quotaCandn5_8  "Candidates (5-8 years prior)"
+lab var quotaCandn9_12 "Candidates (9-12 years prior)"
+lab var quotaCandn13   "Candidates ($>$ 12 years prior)"
+lab var quotaResn1_4   "Reserved Seats (1-4 years prior)"
+lab var quotaResn5_8   "Reserved Seats (5-8 years prior)"
+lab var quotaResn9_12  "Reserved Seats (9-12 years prior)"
+lab var quotaResn13    "Reserved Seats ($>$ 12 years prior)"
 lab var quotaCandp1_4  "Candidates (1-4 years)"
 lab var quotaCandp5_8  "Candidates (5-8 years)"
 lab var quotaCandp9_12 "Candidates (9-12 years)"
-lab var quotaCandp13   "Candidatess ($>$ 12 years)"
+lab var quotaCandp13   "Candidates ($>$ 12 years)"
 lab var qVal           "Gender Quota (\%)"
 lab var qResVal        "Quota (reserved, \%)"
 lab var qCanVal        "Quota (candidates, \%)"
+preserve
+bys country: egen qcountry = max(quota)
+collapse MMRt1 lnMMRt1, by(qcountry year)
+keep if MMRt1!=.
+
+#delimit ;
+twoway line lnMMRt1 year if qcountry==1, lcolor(blue) lwidth(thick)
+    || line lnMMRt1 year if qcountry==0, lcolor(red) lpattern(dash)
+scheme(s1mono) legend(lab(1 "Quota Countries") lab(2 "Non-Quota Countries"))
+ytitle("log(MMR)") xtitle("Year");
+graph export "$OUT/quotas/basicTrends.eps", replace;
+
+twoway line MMRt1 year if qcountry==1, lcolor(blue) lwidth(thick)
+    || line MMRt1 year if qcountry==0, lcolor(red) lpattern(dash)
+scheme(s1mono) legend(lab(1 "Quota Countries") lab(2 "Non-Quota Countries"))
+ytitle("Maternal Mortality Ratio)") xtitle("Year");
+graph export "$OUT/quotas/basicTrendsMMR.eps", replace;
+
+#delimit cr
+restore
 
 
 *-------------------------------------------------------------------------------
@@ -195,7 +237,6 @@ xtreg lnMMRt1 quotaRes quotaCand lnGDP yrs_school health_exp democ i.year i.cont
 xtreg lnMMRt1 quotaRes quotaCand lnGDP i.year if e(sample)==1, fe cluster(ccode)
 
 
-/*
 *-------------------------------------------------------------------------------
 *--- (4) Main Regressions
 *-------------------------------------------------------------------------------
@@ -204,6 +245,7 @@ local opts replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
               (r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
               starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label;
 #delimit cr
+local cntrl  lnGDP 
 
 xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
 xtreg lnMMRt1 quotaRes lnGDP yrs_school democ i.year, fe cluster(ccode)
@@ -215,36 +257,31 @@ qui xtreg lnMMRt1  quota lnGDP i.year, fe cluster(ccode)
 preserve
 keep if e(sample)==1
 
-eststo: xtreg womparl quota lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 quota lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  quota lnGDP i.year, fe cluster(ccode)
-sum quota if e(sample)==1
-local qn = string(r(mean), "%5.3f")
 
-eststo: xtreg womparl quotaRes lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  quotaRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg womparl quotaRes `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaRes `cntrl' i.year, fe cluster(ccode)
 sum quotaRes if e(sample)==1
 local qr = string(r(mean), "%5.3f")
 
-eststo: xtreg womparl quotaCand lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 quotaCand lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  quotaCand lnGDP i.year, fe cluster(ccode)
+eststo: xtreg womparl quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaCand `cntrl' i.year, fe cluster(ccode)
 sum quotaCand if e(sample)==1
 local qc = string(r(mean), "%5.3f")
 
 
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/Quota.tex", `opts'
-keep(quota quotaCand quotaRes) title("Gender Quotas, Women in Parliament and Health")
-mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/Quota.tex", `opts'
+keep(quotaCand quotaRes _cons) title("Gender Quotas, Women in Parliament and Health")
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
-         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
          "is coded from the quotaproject.org, recording whether each country has"
          " a quota, and if so its year of implementation. The proportion of     "
-         "countries with a quota, reserved seats, and a candidate quota is      "
-         "(respectively) `qn', `qr' and `qc'.  Full summary statistics are in   "
+         "countries with reserved seats or a candidate list quota is      "
+         "(respectively) `qr' and `qc'.  Full summary statistics are in   "
          "table 2. Reserved Seats refers"
          " only to those countries where a fixed proportion of representation is"
          " guaranteed for women with binding sanctions in place. Candidate quota"
@@ -256,13 +293,6 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
-
-
-eststo: xtreg womparl qVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 qVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  qVal lnGDP i.year, fe cluster(ccode)
-sum qVal if e(sample)==1
-local qn = string(r(mean), "%5.3f")
 
 eststo: xtreg womparl qResVal lnGDP i.year, fe cluster(ccode)
 eststo: xtreg lnMMRt1 qResVal lnGDP i.year, fe cluster(ccode)
@@ -277,17 +307,17 @@ sum qCanVal if e(sample)==1
 local qc = string(r(mean), "%5.3f")
 
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaVals.tex", `opts'
-keep(qVal qCanVal qResVal) title("Size of Gender Quota, Women in Parliament and Health")
-mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaVals.tex", `opts'
+keep(qCanVal qResVal _cons) title("Size of Gender Quota, Women in Parliament and Health")
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
-         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
          "is coded from the quotaproject.org, recording the size of the quota in "
          "percent of reserved seats or candidates on the ballot. The average size"
-         " of quotas in the full sample of countries with quotas, countries with "
+         " of quotas in the countries with "
          "reserved seats and countries with candidate quotas is (respectively)   "
-         "`qn', `qr' and `qc'.  Full descriptive values are in table 2.          "
+         "`qr' and `qc'.  Full descriptive values are in table 2.          "
          "Coefficients are  interpreted as the effect of increasing the quota by "
          "an additional 1\% \emph{conditional on having a quota in place}.       "
          "Standard errors clustered at the level of the country are reported in  "
@@ -298,10 +328,6 @@ estimates clear
 
 
 local quotatD quotap1_4 quotap5_8 quotap9_12 quotap13
-local cntrl  lnGDP 
-eststo: xtreg womparl `quotatD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 `quotatD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  `quotatD' `cntrl' i.year, fe cluster(ccode)
 
 local quotarD quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
 eststo: xtreg womparl `quotarD' `cntrl' i.year, fe cluster(ccode)
@@ -314,13 +340,13 @@ eststo: xtreg lnMMRt1 `quotacD' `cntrl' i.year, fe cluster(ccode)
 eststo: xtreg lnTBt1  `quotacD' `cntrl' i.year, fe cluster(ccode)
 
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaDynamics.tex",
-`opts' keep(`quotatD' `quotarD' `quotacD')
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaDynamics.tex",
+`opts' keep(`quotarD' `quotacD')
 title("Dynamic Effects of Gender Quotas on Women in Parliament and Health")
-mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
 postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
-         "\bottomrule\multicolumn{10}{p{22.8cm}}{\begin{footnotesize} Quota data "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
          "is coded from the quotaproject.org, recording whether each country has"
          " a quota, and if so its year of implementation.  Reserved Seats refers"
          " only to those countries where a fixed proportion of representation is"
@@ -333,6 +359,417 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   
 #delimit cr
 estimates clear
 
+local quotatN quotan1_4 quotan5_8 quotan9_12 quotan13
+
+local quotarN quotaResn1_4 quotaResn5_8 quotaResn9_12 quotaResn13
+local qrp     quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+eststo: xtreg womparl `quotarN' `qrp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotarN' `qrp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarN' `qrp' `cntrl' i.year, fe cluster(ccode)
+
+local quotacN quotaCandn1_4 quotaCandn5_8 quotaCandn9_12 quotaCandn13
+local qcp     quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaDynamicsPlacebo.tex",
+`opts' keep(`quotarN' `quotacN')
+title("Placebo Test: Pre-Quota Dynamics")
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotanroject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+*-------------------------------------------------------------------------------
+*--- (4X) Regressions with One Model
+*-------------------------------------------------------------------------------
+eststo: xtreg womparl quotaRes quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaRes quotaCand `cntrl' i.year, fe cluster(ccode)
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+sum quotaCand if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/Quota_Same.tex", `opts'
+keep(quotaCand quotaRes _cons) title("Gender Quotas, Women in Parliament and Health")
+postfoot("Country and Year FE &Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{4}{p{10.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation. The proportion of     "
+         "countries with reserved seats or a candidate list quota is      "
+         "(respectively) `qr' and `qc'.  Full summary statistics are in   "
+         "table 2. Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Candidate quota"
+         " refers to those countries where submitted candidate lists must comply"
+         " with a minimum proportion of women (or each gender), but where there "
+         "are no guarantees for representation in parliament. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+eststo: xtreg womparl qResVal qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qResVal qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qResVal qCanVal lnGDP i.year, fe cluster(ccode)
+sum qResVal if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+sum qCanVal if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/QuotaVals_Same.tex", `opts'
+keep(qCanVal qResVal _cons) title("Size of Gender Quota, Women in Parliament and Health")
+postfoot("Country and Year FE &Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{4}{p{10.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording the size of the quota in "
+         "percent of reserved seats or candidates on the ballot. The average size"
+         " of quotas in the countries with "
+         "reserved seats and countries with candidate quotas is (respectively)   "
+         "`qr' and `qc'.  Full descriptive values are in table 2.          "
+         "Coefficients are  interpreted as the effect of increasing the quota by "
+         "an additional 1\% \emph{conditional on having a quota in place}.       "
+         "Standard errors clustered at the level of the country are reported in  "
+         "parentheses. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+local quotatD quotap1_4 quotap5_8 quotap9_12 quotap13
+local cntrl  lnGDP 
+
+local quotarD quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+local quotacD quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotarD' `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotarD' `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarD' `quotacD' `cntrl' i.year, fe cluster(ccode)
+
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/QuotaDynamics_Same.tex",
+`opts' keep(`quotarD' `quotacD')
+title("Dynamic Effects of Gender Quotas on Women in Parliament and Health")
+postfoot("Country and Year FE &Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{4}{p{10.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+local quotatN quotan1_4 quotan5_8 quotan9_12 quotan13
+local cntrl  lnGDP 
+
+local quotarN quotaResn1_4 quotaResn5_8 quotaResn9_12 quotaResn13
+local qrp     quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+local quotacN quotaCandn1_4 quotaCandn5_8 quotaCandn9_12 quotaCandn13
+local qcp     quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotarN' `qrp' `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotarN' `qrp' `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarN' `qrp' `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/QuotaDynamicsPlacebo_Same.tex",
+`opts' keep(`quotarN' `quotacN')
+title("Placebo Test: Pre-Quota Dynamics")
+postfoot("Country and Year FE &Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{4}{p{12.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotanroject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+*-------------------------------------------------------------------------------
+*--- (4X) Regressions with One Model
+*-------------------------------------------------------------------------------
+eststo: xtreg womparl quotaRes quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 quotaRes quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaRes quotaCand `cntrl' i.year, fe cluster(ccode)
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+sum quotaCand if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/Quota_Same.tex", `opts'
+keep(quotaCand quotaRes _cons) title("Gender Quotas, Women in Parliament and Health")
+postfoot("Country and Year FE &Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{4}{p{10.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation. The proportion of     "
+         "countries with reserved seats or a candidate list quota is      "
+         "(respectively) `qr' and `qc'.  Full summary statistics are in   "
+         "table 2. Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Candidate quota"
+         " refers to those countries where submitted candidate lists must comply"
+         " with a minimum proportion of women (or each gender), but where there "
+         "are no guarantees for representation in parliament. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+eststo: xtreg womparl qResVal qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qResVal qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qResVal qCanVal lnGDP i.year, fe cluster(ccode)
+sum qResVal if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+sum qCanVal if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/QuotaVals_Same.tex", `opts'
+keep(qCanVal qResVal _cons) title("Size of Gender Quota, Women in Parliament and Health")
+postfoot("Country and Year FE &Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{4}{p{10.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording the size of the quota in "
+         "percent of reserved seats or candidates on the ballot. The average size"
+         " of quotas in the countries with "
+         "reserved seats and countries with candidate quotas is (respectively)   "
+         "`qr' and `qc'.  Full descriptive values are in table 2.          "
+         "Coefficients are  interpreted as the effect of increasing the quota by "
+         "an additional 1\% \emph{conditional on having a quota in place}.       "
+         "Standard errors clustered at the level of the country are reported in  "
+         "parentheses. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+local quotatD quotap1_4 quotap5_8 quotap9_12 quotap13
+local cntrl  lnGDP 
+
+local quotarD quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+local quotacD quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotarD' `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotarD' `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarD' `quotacD' `cntrl' i.year, fe cluster(ccode)
+
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/QuotaDynamics_Same.tex",
+`opts' keep(`quotarD' `quotacD')
+title("Dynamic Effects of Gender Quotas on Women in Parliament and Health")
+postfoot("Country and Year FE &Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{4}{p{10.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+local quotatN quotan1_4 quotan5_8 quotan9_12 quotan13
+local cntrl  lnGDP 
+
+local quotarN quotaResn1_4 quotaResn5_8 quotaResn9_12 quotaResn13
+local qrp     quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+local quotacN quotaCandn1_4 quotaCandn5_8 quotaCandn9_12 quotaCandn13
+local qcp     quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotarN' `qrp' `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotarN' `qrp' `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarN' `qrp' `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 using "$OUT/QuotaDynamicsPlacebo_Same.tex",
+`opts' keep(`quotarN' `quotacN')
+title("Placebo Test: Pre-Quota Dynamics")
+postfoot("Country and Year FE &Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{4}{p{12.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotanroject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+*-------------------------------------------------------------------------------
+*--- (4Y) Regressions with DHS data
+*-------------------------------------------------------------------------------
+keep if lnMMRt1DHS!=.
+lab var lnMMRt1DHS "ln(MMR)"
+
+eststo: xtreg womparl quotaRes `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS quotaRes `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaRes `cntrl' i.year, fe cluster(ccode)
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+
+eststo: xtreg womparl quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS quotaCand `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  quotaCand `cntrl' i.year, fe cluster(ccode)
+sum quotaCand if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/Quota_DHS.tex", `opts'
+keep(quotaCand quotaRes _cons)
+title("Gender Quotas, Women in Parliament and Health (DHS Data)")
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation. The proportion of     "
+         "countries with reserved seats or a candidate list quota is      "
+         "(respectively) `qr' and `qc'.  Full summary statistics are in   "
+         "table 2. Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Candidate quota"
+         " refers to those countries where submitted candidate lists must comply"
+         " with a minimum proportion of women (or each gender), but where there "
+         "are no guarantees for representation in parliament. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+eststo: xtreg womparl qResVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS qResVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qResVal lnGDP i.year, fe cluster(ccode)
+sum qResVal if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+
+eststo: xtreg womparl qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qCanVal lnGDP i.year, fe cluster(ccode)
+sum qCanVal if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaVals_DHS.tex", `opts'
+keep(qCanVal qResVal _cons)
+title("Size of Gender Quota, Women in Parliament and Health (DHS Data)")
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording the size of the quota in "
+         "percent of reserved seats or candidates on the ballot. The average size"
+         " of quotas in the countries with "
+         "reserved seats and countries with candidate quotas is (respectively)   "
+         "`qr' and `qc'.  Full descriptive values are in table 2.          "
+         "Coefficients are  interpreted as the effect of increasing the quota by "
+         "an additional 1\% \emph{conditional on having a quota in place}.       "
+         "Standard errors clustered at the level of the country are reported in  "
+         "parentheses. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+local quotatD quotap1_4 quotap5_8 quotap9_12 quotap13
+
+local quotarD quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+eststo: xtreg womparl `quotarD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS `quotarD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarD' `cntrl' i.year, fe cluster(ccode)
+
+local quotacD quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotacD' `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaDynamics_DHS.tex",
+`opts' keep(`quotarD' `quotacD')
+title("Dynamic Effects of Gender Quotas on Women in Parliament and Health (DHS Data)")
+mgroups("Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+local quotatN quotan1_4 quotan5_8 quotan9_12 quotan13
+
+local quotarN quotaResn1_4 quotaResn5_8 quotaResn9_12 quotaResn13
+local qrp     quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+eststo: xtreg womparl `quotarN' `qrp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS `quotarN' `qrp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarN' `qrp' `cntrl' i.year, fe cluster(ccode)
+
+local quotacN quotaCandn1_4 quotaCandn5_8 quotaCandn9_12 quotaCandn13
+local qcp     quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1DHS `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotacN' `qcp' `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/QuotaDynamicsPlacebo_DHS.tex",
+`opts' keep(`quotarN' `quotacN')
+title("Placebo Test: Pre-Quota Dynamics (DHS Data)")
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotanroject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+exit
 
 *-------------------------------------------------------------------------------
 *--- (4a) Alternative Regressions 
@@ -676,7 +1113,7 @@ eststo: xtreg birthAttend `quotacD' `cntrl' i.year, fe cluster(ccode)
 eststo: xtreg teenPreg    `quotacD' `cntrl' i.year, fe cluster(ccode)
 
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaMechanismsDynamics_5.tex",
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaMechanismsDynamics.tex",
 replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
@@ -698,7 +1135,7 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                           "
 #delimit cr
 estimates clear
 
-
+exit
 
 keep if quota==1
 

@@ -28,34 +28,42 @@ sd(fmt(2) label(Std.\ Dev.)) min(fmt(2) label(Min)) max(fmt(2) label(Max))");
 use "$DAT/LangGender_dataset.dta", clear
 drop if not_country==1
 keep if womparl!=.
-keep country womparl year tb_death_rate
-keep if year>=1990
-merge 1:1 country year using "MMR"         , gen(_mergeMMR)
-merge 1:1 country year using "GDP"         , gen(_mergeGDP)
-merge 1:1 country year using "population"  , gen(_mergepop)
-merge 1:1 country year using "mechanisms"  , gen(_mergeMec)
 
+keep country womparl year tb_death_rate yr_sch_impute democ health_exp contcode
+keep if year>=1990
+merge 1:1 country year using "MMR"          , gen(_mergeMMR)
+merge 1:1 country year using "MMR_5yr"      , gen(_mergeMM5)
+merge 1:1 country year using "GDP"          , gen(_mergeGDP)
+merge 1:1 country year using "population"   , gen(_mergepop)
+merge 1:1 country year using "mechanisms"   , gen(_mergeMec)
+merge 1:1 country year using "fertility"    , gen(_mergeFer)
+merge 1:1 country year using "malemortality", gen(_mergemMo)
 
 merge m:1 country using quotasComplete
-bys country: egen pop=mean(sp_pop_totl)
-
-*replace quotayear = 2005 if country=="Nepal"
-*replace quotayear = 2005 if country=="Uganda"
-*replace quotayear = 2008 if country=="Albania"
+replace quotayear = 2005 if country=="Uganda"
 
 *-------------------------------------------------------------------------------
-*--- (3) Basic regressions
+*--- (3) Setup
 *-------------------------------------------------------------------------------
 keep if sh_sta_mmrt !=.&womparl !=.&ny_gdp_pcap_pp_kd !=.
+rename MMR MMR5
+gen lnGDP  = log(ny_gdp)
+
 sort country year
-bys country: gen MMRt1 = sh_sta_mmrt[_n+2]
-bys country: gen TBt1  = tb_death_rate[_n+1]
-gen lnMMRt1      = log(MMRt1)
-gen lnGDP        = log(ny_gdp)
-gen lnTBt1       = log(TBt1)
-gen womparxlnGDP = womparl*lnGDP
-replace quotayear=. if quotayear==2013
-bys country: egen aveGDP = mean(lnGDP)
+bys country: ipolate yr_sch_impute year, gen(yrs_school)
+bys country: gen  MMRt1   = sh_sta_mmrt[_n+2]
+bys country: gen  fertt1  = fert[_n+2]
+bys country: gen  mmortt1 = maleMort[_n+1]
+bys country: gen  TBt1    = tb_death_rate[_n+1]
+bys country: egen pop     =mean(sp_pop_totl)
+bys country: egen aveGDP  = mean(lnGDP)
+
+gen lnMMRt1       = log(MMRt1)
+gen lnTBt1        = log(TBt1)
+gen lnfertt1      = log(fertt1)
+gen lnmmortt1     = log(mmortt1)
+gen womparxlnGDP  = womparl*lnGDP
+replace quotayear = . if quotayear==2013
 sum aveGDP, d
 gen lowGDP = aveGDP<=r(p50)
 
@@ -65,10 +73,6 @@ encode country, gen(ccode)
 encode region, gen(rcode)
 xtset ccode year
 
-xtreg lnMMRt1 womparl               i.year, fe cluster(ccode)
-xtreg lnMMRt1 womparl lnGDP         i.year, fe cluster(ccode)
-xtreg lnMMRt1 womparl lnGDP womparx i.year, fe cluster(ccode)
-
 
 gen quotaRes     = quotatype!="Legislated Candidate Quota"&quota==1
 gen quotaCand    = quotatype=="Legislated Candidate Quota"&quota==1
@@ -76,32 +80,52 @@ gen qVal         = quota*quotapercent1
 gen qResVal      = quotaRes*quotapercent1
 gen qCanVal      = quotaCan*quotapercent1
 foreach var of varlist quota quotaRes quotaCand {
-    gen `var'p1_4=`var'==1&(year-quotayear>0)&(year-quotayear<=5)
-    gen `var'p5_8=`var'==1&(year-quotayear>5)&(year-quotayear<=10)
-    gen `var'p9_12=`var'==1&(year-quotayear>10)&(year-quotayear<=15)
-    gen `var'p13=`var'==1&(year-quotayear>15)&quotayear!=.
+    gen `var'p1_4=`var'==1&(year-quotayear>0)&(year-quotayear<=4)
+    gen `var'p5_8=`var'==1&(year-quotayear>4)&(year-quotayear<=8)
+    gen `var'p9_12=`var'==1&(year-quotayear>8)&(year-quotayear<=12)
+    gen `var'p13=`var'==1&(year-quotayear>12)&quotayear!=.
 }
-gen quotaLower = quota==1&parliament=="Bicameral"&(quotapercent1!=0&quotapercent1!=.)
-gen quotaUpper = quota==1&parliament=="Bicameral"&(quotapercent2!=0&quotapercent2!=.)
-gen quotaUni   = quota==1&parliament=="Unicameral"
-gen reservedLower = quotaLower*quotaRes
-gen reservedUpper = quotaUpper*quotaRes
-gen reservedUni   = quotaUni*quotaRes
+gen quotaLower = quota==1&parl=="Bicameral"&(quotapercent1!=0&quotapercent1!=.)
+gen quotaUpper = quota==1&parl=="Bicameral"&(quotapercent2!=0&quotapercent2!=.)
+gen quotaUni   = quota==1&parl=="Unicameral"
+replace quotapercent2=. if quotapercent2==0
+gen reservedLower   = quotaLower*quotaRes
+gen reservedUpper   = quotaUpper*quotaRes
+gen reservedUni     = quotaUni*quotaRes
 gen candidatesLower = quotaLower*quotaCand
 gen candidatesUpper = quotaUpper*quotaCand
 gen candidatesUni   = quotaUni*quotaCand
 
 
-lab var quota     "Any Quota"
-lab var quotaRes  "Reserved Seats"
-lab var quotaCand "Legislated Candidate Quota"
-lab var quotayear "Year Quota Implemented"
-lab var womparl   "\% Women in Parliament"
-lab var lnMMRt1   "ln(Maternal Mortality Ratio)"
-lab var lnGDP     "ln(GDP per capita)"
-lab var quotapercent1 "Quota Size (lower house/uni-cameral)"
-lab var quotapercent2 "Quota Size (upper house)"
-replace quotapercent2=. if quotapercent2==0
+lab var quota          "Any Quota"
+lab var quotaRes       "Reserved Seats"
+lab var quotaCand      "Legislated Candidate Quota"
+lab var quotayear      "Year Quota Implemented"
+lab var womparl        "\% Women in Parliament"
+lab var lnMMRt1        "ln(Maternal Mortality Ratio)"
+lab var lnGDP          "ln(GDP per capita)"
+lab var quotapercent1  "Quota Size (lower house/uni-cameral)"
+lab var quotapercent2  "Quota Size (upper house)"
+lab var quotap1_4      "Quota (1-4 years)"
+lab var quotap5_8      "Quota (5-8 years)"
+lab var quotap9_12     "Quota (9-12 years)"
+lab var quotap13       "Quota ($>$ 12  years)"
+lab var quotaResp1_4   "Reserved Seats (1-4 years)"
+lab var quotaResp5_8   "Reserved Seats (5-8 years)"
+lab var quotaResp9_12  "Reserved Seats (9-12 years)"
+lab var quotaResp13    "Reserved Seats ($>$ 12 years)"
+lab var quotaCandp1_4  "Candidates (1-4 years)"
+lab var quotaCandp5_8  "Candidates (5-8 years)"
+lab var quotaCandp9_12 "Candidates (9-12 years)"
+lab var quotaCandp13   "Candidatess ($>$ 12 years)"
+lab var qVal           "Gender Quota (\%)"
+lab var qResVal        "Quota (reserved, \%)"
+lab var qCanVal        "Quota (candidates, \%)"
+
+
+*-------------------------------------------------------------------------------
+*--- (3a) Summary statistics
+*-------------------------------------------------------------------------------
 /*
 preserve
 keep if lnMMRt1!=.
@@ -155,6 +179,37 @@ restore
 exit
 */
 
+lab var womparl        "\% Women"
+lab var lnMMRt1        "ln(MMR)"
+lab var lnTBt1         "ln(TB)"
+lab var quota          "Any Quotas"
+lab var quotaRes       "Quota (reserved)"
+lab var quotaCand      "Quota (candidates)"
+
+
+xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaRes quotaCand lnGDP i.year, fe cluster(ccode)
+
+xtreg lnMMRt1 quotaRes quotaCand lnGDP yrs_school democ i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaRes quotaCand lnGDP yrs_school health_exp democ i.year i.contcode#i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaRes quotaCand lnGDP i.year if e(sample)==1, fe cluster(ccode)
+
+
+/*
+*-------------------------------------------------------------------------------
+*--- (4) Main Regressions
+*-------------------------------------------------------------------------------
+#delimit ;
+local opts replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+              (r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+              starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label;
+#delimit cr
+
+xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaRes lnGDP yrs_school democ i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaRes lnGDP yrs_school health_exp democ i.year i.contcode#i.year, fe cluster(ccode)
+xtreg lnMMRt1 quotaRes lnGDP i.year if e(sample)==1, fe cluster(ccode)
+
     
 qui xtreg lnMMRt1  quota lnGDP i.year, fe cluster(ccode)
 preserve
@@ -165,7 +220,6 @@ eststo: xtreg lnMMRt1 quota lnGDP i.year, fe cluster(ccode)
 eststo: xtreg lnTBt1  quota lnGDP i.year, fe cluster(ccode)
 sum quota if e(sample)==1
 local qn = string(r(mean), "%5.3f")
-
 
 eststo: xtreg womparl quotaRes lnGDP i.year, fe cluster(ccode)
 eststo: xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
@@ -178,19 +232,10 @@ eststo: xtreg lnMMRt1 quotaCand lnGDP i.year, fe cluster(ccode)
 eststo: xtreg lnTBt1  quotaCand lnGDP i.year, fe cluster(ccode)
 sum quotaCand if e(sample)==1
 local qc = string(r(mean), "%5.3f")
-lab var womparl "\% Women"
-lab var lnMMRt1 "ln(MMR)"
-lab var lnTBt1 "ln(TB)"
-lab var quota "Any Quotas"
-lab var quotaRes "Quota (reserved)"
-lab var quotaCand "Quota (candidates)"
 
 
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/Quota.tex",
-replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/Quota.tex", `opts'
 keep(quota quotaCand quotaRes) title("Gender Quotas, Women in Parliament and Health")
 mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
@@ -211,6 +256,88 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
+
+
+eststo: xtreg womparl qVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qVal lnGDP i.year, fe cluster(ccode)
+sum qVal if e(sample)==1
+local qn = string(r(mean), "%5.3f")
+
+eststo: xtreg womparl qResVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qResVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qResVal lnGDP i.year, fe cluster(ccode)
+sum qResVal if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+
+eststo: xtreg womparl qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 qCanVal lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  qCanVal lnGDP i.year, fe cluster(ccode)
+sum qCanVal if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaVals.tex", `opts'
+keep(qVal qCanVal qResVal) title("Size of Gender Quota, Women in Parliament and Health")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording the size of the quota in "
+         "percent of reserved seats or candidates on the ballot. The average size"
+         " of quotas in the full sample of countries with quotas, countries with "
+         "reserved seats and countries with candidate quotas is (respectively)   "
+         "`qn', `qr' and `qc'.  Full descriptive values are in table 2.          "
+         "Coefficients are  interpreted as the effect of increasing the quota by "
+         "an additional 1\% \emph{conditional on having a quota in place}.       "
+         "Standard errors clustered at the level of the country are reported in  "
+         "parentheses. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+local quotatD quotap1_4 quotap5_8 quotap9_12 quotap13
+local cntrl  lnGDP 
+eststo: xtreg womparl `quotatD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotatD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotatD' `cntrl' i.year, fe cluster(ccode)
+
+local quotarD quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+eststo: xtreg womparl `quotarD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotarD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotarD' `cntrl' i.year, fe cluster(ccode)
+
+local quotacD quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
+eststo: xtreg womparl `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `quotacD' `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg lnTBt1  `quotacD' `cntrl' i.year, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaDynamics.tex",
+`opts' keep(`quotatD' `quotarD' `quotacD')
+title("Dynamic Effects of Gender Quotas on Women in Parliament and Health")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
+         "\bottomrule\multicolumn{10}{p{22.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation.  Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Years of the   "
+         "independent variables refer to the total time period for which the    "
+         "quota has been in place, and are mutually exclusive. Standard errors  "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+*-------------------------------------------------------------------------------
+*--- (4a) Alternative Regressions 
+*-------------------------------------------------------------------------------
+
 
 local cnd if lowGDP==1
 eststo: xtreg womparl quota lnGDP i.year `cnd', fe cluster(ccode)
@@ -357,52 +484,6 @@ postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
 estimates clear
 
 
-eststo: xtreg womparl qVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 qVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  qVal lnGDP i.year, fe cluster(ccode)
-sum qVal if e(sample)==1
-local qn = string(r(mean), "%5.3f")
-
-eststo: xtreg womparl qResVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 qResVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  qResVal lnGDP i.year, fe cluster(ccode)
-sum qResVal if e(sample)==1
-local qr = string(r(mean), "%5.3f")
-
-eststo: xtreg womparl qCanVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 qCanVal lnGDP i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  qCanVal lnGDP i.year, fe cluster(ccode)
-sum qCanVal if e(sample)==1
-local qc = string(r(mean), "%5.3f")
-lab var womparl "\% Women"
-lab var lnMMRt1 "ln(MMR)"
-lab var lnTBt1 "ln(TB)"
-lab var qVal    "Gender Quota (\%)"
-lab var qResVal "Quota (reserved, \%)"
-lab var qCanVal "Quota (candidates, \%)"
-
-#delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaVals.tex",
-replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
-keep(qVal qCanVal qResVal) title("Size of Gender Quota, Women in Parliament and Health")
-mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
-prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
-         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Quota data "
-         "is coded from the quotaproject.org, recording the size of the quota in "
-         "percent of reserved seats or candidates on the ballot. The average size"
-         " of quotas in the full sample of countries with quotas, countries with "
-         "reserved seats and countries with candidate quotas is (respectively)   "
-         "`qn', `qr' and `qc'.  Full descriptive values are in table 2.          "
-         "Coefficients are  interpreted as the effect of increasing the quota by "
-         "an additional 1\% \emph{conditional on having a quota in place}.       "
-         "Standard errors clustered at the level of the country are reported in  "
-         "parentheses. ***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
-estimates clear
 
 gen qvalxlnGDP  = qVal*lnGDP2
 gen qRvalxlnGDP = qResVal*lnGDP2
@@ -488,94 +569,6 @@ postfoot("Country FE & Y & Y & Y & Y & Y & Y & Y & Y  \\                        
 estimates clear
 
 
-
-eststo: xtreg womparl quota lnGDP i.year, fe cluster(ccode)
-eststo: xtreg MMRt1 quota lnGDP i.year, fe cluster(ccode)
-eststo: xtreg TBt1  quota lnGDP i.year, fe cluster(ccode)
-
-eststo: xtreg womparl quotaRes lnGDP i.year, fe cluster(ccode)
-eststo: xtreg MMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
-eststo: xtreg TBt1  quotaRes lnGDP i.year, fe cluster(ccode)
-
-eststo: xtreg womparl quotaCand lnGDP i.year, fe cluster(ccode)
-eststo: xtreg MMRt1 quotaCand lnGDP i.year, fe cluster(ccode)
-eststo: xtreg TBt1  quotaCand lnGDP i.year, fe cluster(ccode)
-lab var MMRt1 "MMR"
-lab var TBt1 "TB"
-
-#delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaLevels.tex",
-replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
-keep(quota quotaCand quotaRes) title("Gender Quotas, Women in Parliament and Health (not in logs)")
-mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
-prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
-         "\bottomrule\multicolumn{10}{p{20.8cm}}{\begin{footnotesize} Both MMR   "
-         "and TB are recorded as deaths per 100,000 events.  For MMR, this is    "
-         "deaths per 100,000 live births, while for TB this is deaths per 100,000"
-         " population. Standard errors   "
-         "clustered at the level of the country are reported in parentheses.     "
-         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
-estimates clear
-
-local quotatD quotap1_4 quotap5_8 quotap9_12 quotap13
-local cntrl  lnGDP 
-eststo: xtreg womparl `quotatD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 `quotatD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  `quotatD' `cntrl' i.year, fe cluster(ccode)
-
-local quotarD quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
-eststo: xtreg womparl `quotarD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 `quotarD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  `quotarD' `cntrl' i.year, fe cluster(ccode)
-
-local quotacD quotaCandp1_4 quotaCandp5_8 quotaCandp9_12 quotaCandp13
-eststo: xtreg womparl `quotacD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 `quotacD' `cntrl' i.year, fe cluster(ccode)
-eststo: xtreg lnTBt1  `quotacD' `cntrl' i.year, fe cluster(ccode)
-
-lab var womparl "\% Women"
-lab var lnMMRt1 "ln(MMR)"
-lab var lnTBt1 "ln(TB)"
-lab var quotap1_4 "Quota (1-5 years)"
-lab var quotap5_8 "Quota (6-10 years)"
-lab var quotap9_12 "Quota (11-15 years)"
-lab var quotap13 "Quota ($>$ 15  years)"
-lab var quotaResp1_4 "Reserved Seats (1-5 years)"
-lab var quotaResp5_8 "Reserved Seats (6-10 years)"
-lab var quotaResp9_12 "Reserved Seats (11-15 years)"
-lab var quotaResp13 "Reserved Seats ($>$ 15 years)"
-lab var quotaCandp1_4 "Candidates (1-5 years)"
-lab var quotaCandp5_8 "Candidates (6-10 years)"
-lab var quotaCandp9_12 "Candidates (10-15 years)"
-lab var quotaCandp13 "Candidatess ($>$ 15 years)"
-
-#delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 est9 using "$OUT/QuotaDynamics_5.tex",
-replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
-keep(`quotatD' `quotarD' `quotacD')
-title("Dynamic Effects of Gender Quotas on Women in Parliament and Health (5 Year Intervals)")
-mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 0 1 0 0 1 0 0)
-prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y \\                                   "
-         "\bottomrule\multicolumn{10}{p{22.8cm}}{\begin{footnotesize} Quota data "
-         "is coded from the quotaproject.org, recording whether each country has"
-         " a quota, and if so its year of implementation.  Reserved Seats refers"
-         " only to those countries where a fixed proportion of representation is"
-         " guaranteed for women with binding sanctions in place. Years of the   "
-         "independent variables refer to the total time period for which the    "
-         "quota has been in place, and are mutually exclusive. Standard errors  "
-         "clustered at the level of the country are reported in parentheses.    "
-         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
-estimates clear
 
 
 local quotat quotaLower quotaUpper quotaUni
@@ -759,7 +752,7 @@ postfoot("Year FE &Y&Y&Y&Y&Y&Y&Y&Y&Y \\                       "
 estimates clear
 
 restore
-
+*/
 *-------------------------------------------------------------------------------
 *--- (4a) Event Study Women in Parliament -- Reserved Seats
 *-------------------------------------------------------------------------------
@@ -875,10 +868,119 @@ legend(order(1 "Point Estimate" 2 "95% CI"))
 note("Year 0 is omitted as the base case.");
 graph export "$OUT/quotas/eventlnMDeath.eps", as(eps) replace;
 #delimit cr
+drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead* 
+
+*-------------------------------------------------------------------------------
+*--- (4bii) Event Study Fertility -- Reserved Seats
+*-------------------------------------------------------------------------------
+drop quota
+gen quota = year>=quotayear
+
+gen prepost = year-(quotayear-1)
+bys country: egen qcountry = max(quota)
+sum prepost
+local min = (-1*r(min))+1
+local max = r(max)-1
+
+foreach num of numlist 1(1)`min' {
+    gen intyear = prepost==-`num'
+    gen quotaLag`num' = qcountry*intyear
+    drop intyear
+}
+foreach num of numlist 1(1)`max' {
+    gen intyear = prepost==`num'
+    gen quotaLead`num' = qcountry*intyear
+    drop intyear
+}
+
+xtreg fertt1 i.year quotaLag* quotaLead* lnGDP i.rcode#c.year, fe cluster(ccode)
+local j = 1
+gen time   = .
+gen PointE = .
+gen UBound = .
+gen LBound = .
+foreach num of numlist `min'(-1)1 {
+    replace time   = -`num' in `j'
+    replace PointE = _b[quotaLag`num'] in `j'
+    replace LBound = _b[quotaLag`num']-1.96*_se[quotaLag`num'] in `j'
+    replace UBound = _b[quotaLag`num']+1.96*_se[quotaLag`num'] in `j'
+    local ++j
+}
+foreach num of numlist 1(1)`max' {
+    replace time   =  `num' in `j'
+    replace PointE = _b[quotaLead`num'] in `j'
+    replace LBound = _b[quotaLead`num']-1.96*_se[quotaLead`num'] in `j'
+    replace UBound = _b[quotaLead`num']+1.96*_se[quotaLead`num'] in `j'
+    local ++j
+}
+#delimit ;
+twoway line PointE time || rcap LBound UBound time,
+scheme(s1mono) ytitle("Fertility Rate")
+yline(0, lpattern(dot)) xline(0, lcolor(red))
+legend(order(1 "Point Estimate" 2 "95% CI"))
+note("Year 0 is omitted as the base case.");
+graph export "$OUT/quotas/eventFert.eps", as(eps) replace;
+#delimit cr
+
+drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead* 
+
+
+*-------------------------------------------------------------------------------
+*--- (4biii) Event Study Male Mortality -- Reserved Seats
+*-------------------------------------------------------------------------------
+drop quota
+gen quota = year>=quotayear
+
+gen prepost = year-(quotayear-1)
+bys country: egen qcountry = max(quota)
+sum prepost
+local min = (-1*r(min))+1
+local max = r(max)-1
+
+foreach num of numlist 1(1)`min' {
+    gen intyear = prepost==-`num'
+    gen quotaLag`num' = qcountry*intyear
+    drop intyear
+}
+foreach num of numlist 1(1)`max' {
+    gen intyear = prepost==`num'
+    gen quotaLead`num' = qcountry*intyear
+    drop intyear
+}
+
+xtreg lnmmortt1 i.year quotaLag* quotaLead* lnGDP, fe cluster(ccode)
+local j = 1
+gen time   = .
+gen PointE = .
+gen UBound = .
+gen LBound = .
+foreach num of numlist `min'(-1)1 {
+    replace time   = -`num' in `j'
+    replace PointE = _b[quotaLag`num'] in `j'
+    replace LBound = _b[quotaLag`num']-1.96*_se[quotaLag`num'] in `j'
+    replace UBound = _b[quotaLag`num']+1.96*_se[quotaLag`num'] in `j'
+    local ++j
+}
+foreach num of numlist 1(1)`max' {
+    replace time   =  `num' in `j'
+    replace PointE = _b[quotaLead`num'] in `j'
+    replace LBound = _b[quotaLead`num']-1.96*_se[quotaLead`num'] in `j'
+    replace UBound = _b[quotaLead`num']+1.96*_se[quotaLead`num'] in `j'
+    local ++j
+}
+#delimit ;
+twoway line PointE time || rcap LBound UBound time,
+scheme(s1mono) ytitle("Male Mortality")
+yline(0, lpattern(dot)) xline(0, lcolor(red))
+legend(order(1 "Point Estimate" 2 "95% CI"))
+note("Year 0 is omitted as the base case.");
+graph export "$OUT/quotas/eventMMort.eps", as(eps) replace;
+#delimit cr
 
 drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead* 
 
 restore
+
 *-------------------------------------------------------------------------------
 *--- (4c) Event Study Women in Parliament -- Candidates
 *-------------------------------------------------------------------------------
@@ -997,123 +1099,7 @@ graph export "$OUT/quotas/eventlnMDeath_cands.eps", as(eps) replace;
 
 restore
 
-
-*-------------------------------------------------------------------------------
-*--- (4e) Event Study Women in Parliament: Binned in 2
-*-------------------------------------------------------------------------------
-preserve    
-replace quotayear=. if quotatype=="Legislated Candidate Quota"
-replace quotayear=. if quotayear==2013
-
-drop quota
-gen quota = year>=quotayear
-
-
-gen prepost = year-(quotayear-1)
-bys country: egen qcountry = max(quota)
-sum prepost
-local min = (-1*r(min))+1
-local max = r(max)-1
-
-foreach num of numlist 1 2(2)`min' {
-    gen intyear = prepost==-`num'|prepost==-(`num'+1)
-    gen quotaLag`num' = qcountry*intyear
-    drop intyear
-}
-
-foreach num of numlist 1 2(2)`max' {
-    gen intyear = prepost==`num'|prepost==(`num'+1)
-    gen quotaLead`num' = qcountry*intyear
-    drop intyear
-}
-
-xtreg womparl i.year quotaLag* quotaLead* lnGDP, fe cluster(ccode)
-local j = 1
-gen time   = .
-gen PointE = .
-gen UBound = .
-gen LBound = .
-foreach num of numlist `min'(-2)2 1 {
-    replace time   = -`num' in `j'
-    replace PointE = _b[quotaLag`num'] in `j'
-    replace LBound = _b[quotaLag`num']-1.96*_se[quotaLag`num'] in `j'
-    replace UBound = _b[quotaLag`num']+1.96*_se[quotaLag`num'] in `j'
-    local ++j
-}
-foreach num of numlist 1 2(2)`max' {
-    replace time   =  `num' in `j'
-    replace PointE = _b[quotaLead`num'] in `j'
-    replace LBound = _b[quotaLead`num']-1.96*_se[quotaLead`num'] in `j'
-    replace UBound = _b[quotaLead`num']+1.96*_se[quotaLead`num'] in `j'
-    local ++j
-}
-#delimit ;
-twoway line PointE time || rcap LBound UBound time,
-scheme(s1mono) ytitle("Women in Parliament")
-yline(0, lpattern(dot)) xline(0, lcolor(red))
-legend(order(1 "Point Estimate" 2 "95% CI"))
-note("Year 0 is omitted as the base case.");
-graph export "$OUT/quotas/eventWomParl_two.eps", as(eps) replace;
-#delimit cr
-drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead* 
-
-*-------------------------------------------------------------------------------
-*--- (4f) Event Study MMR: Binned in 2
-*-------------------------------------------------------------------------------
-drop quota
-gen quota = year>=quotayear
-
-gen prepost = year-(quotayear-1)
-bys country: egen qcountry = max(quota)
-sum prepost
-local min = (-1*r(min))+1
-local max = r(max)-1
-
-foreach num of numlist 1 2(2)`min' {
-    gen intyear = prepost==-`num'|prepost==-(`num'-1)
-    gen quotaLag`num' = qcountry*intyear
-    drop intyear
-}
-foreach num of numlist 1 2(2)`max' {
-    gen intyear = prepost==`num'
-    gen quotaLead`num' = qcountry*intyear
-    drop intyear
-}
-
-xtreg lnMMRt1 i.year quotaLag* quotaLead* lnGDP, fe cluster(ccode)
-local j = 1
-gen time   = .
-gen PointE = .
-gen UBound = .
-gen LBound = .
-foreach num of numlist `min'(-2)2 1 {
-    replace time   = -`num' in `j'
-    replace PointE = _b[quotaLag`num'] in `j'
-    replace LBound = _b[quotaLag`num']-1.96*_se[quotaLag`num'] in `j'
-    replace UBound = _b[quotaLag`num']+1.96*_se[quotaLag`num'] in `j'
-    local ++j
-}
-foreach num of numlist 1 2(2)`max' {
-    replace time   =  `num' in `j'
-    replace PointE = _b[quotaLead`num'] in `j'
-    replace LBound = _b[quotaLead`num']-1.96*_se[quotaLead`num'] in `j'
-    replace UBound = _b[quotaLead`num']+1.96*_se[quotaLead`num'] in `j'
-    local ++j
-}
-#delimit ;
-twoway line PointE time || rcap LBound UBound time,
-scheme(s1mono) ytitle("log(Maternal Deaths)")
-yline(0, lpattern(dot)) xline(0, lcolor(red))
-legend(order(1 "Point Estimate" 2 "95% CI"))
-note("Year 0 is omitted as the base case.");
-graph export "$OUT/quotas/eventlnMDeath_two.eps", as(eps) replace;
-#delimit cr
-
-
-restore
-
-
-
+exit
 
 *-------------------------------------------------------------------------------
 *--- (5) Descriptive plots
@@ -1160,6 +1146,23 @@ graph export $OUT/quotas/quotaTimeWP.eps, as(eps) replace;
 #delimit cr
 restore
 
+preserve
+collapse womparl lnMMRt1, by(year)
+rename year quotayear
+lab var womparl "Average % of Women in Parliament"
+lab var lnMMRt1 "ln(Maternal Mortality Ratio)"
+keep if quotayear<=2013
+#delimit ;
+twoway line womparl quotayear, scheme(s1mono) lcolor(red) lwidth(thick) yaxis(1)
+    || line lnMMRt1 quotayear, lcolor(blue) lwidth(thick) lpattern(dash) yaxis(2)
+xlabel(1990 1995 2000 2005 2010)
+ytitle("Average % of Women in Parliament") xtitle("Year")
+legend(lab(1 "Women in Parliament") lab(2 "ln(MMR)"))
+;
+graph export $OUT/quotas/WomParlMMR.eps, as(eps) replace;
+#delimit cr
+restore
+
 
 preserve
 collapse quotayear rcode, by(country quotatype)
@@ -1191,29 +1194,57 @@ restore
 *-------------------------------------------------------------------------------
 *--- (6) Country plots over time
 *-------------------------------------------------------------------------------
+preserve
 bys country: egen qcountry = max(quota)
 keep if qcountry==1
+drop if country=="Haiti"
 replace country = subinstr(country, ",", " ", .)
-levelsof country, local(countries)
+levelsof country if quotatype=="Legislated Candidate Quota", local(countries)
+local Cgraphs
+
 local i=1
 foreach cc of local countries {
     dis "`cc'"
     sum quotayear if country==`"`cc'"'
     local ly = r(mean)
     sum quotapercent1 if country==`"`cc'"'
-    local qp = r(mean)
+    local qp = string(r(mean), "%5.3f")
+    
     #delimit ;
-    line womparl year if country==`"`cc'"', lcolor(black) lwidth(thick)
+    twoway line womparl year if country==`"`cc'"', lcolor(black) lwidth(thick)
     scheme(s1mono) xline(`ly', lcolor(red)) title(`cc') ytitle("% Women in Parlimanet")
-    xtitle("Year") note("quotaproject listed quota is `qp'%");
+    xtitle("Year") note("quotaproject listed quota is `qp'%") name(c`i', replace);
     #delimit cr
     graph export "$OUT/quotas/countries/c`i'.eps", replace
+    local Cgraphs `Cgraphs' c`i' 
     local ++i
 }
+graph combine `Cgraphs', scheme(s1mono)
+graph export "$OUT/quotas/CandidateCountries.eps", replace
 
+levelsof country if quotatype!="Legislated Candidate Quota", local(countries)
+local Rgraphs
+
+foreach cc of local countries {
+    dis "`cc'"
+    sum quotayear if country==`"`cc'"'
+    local ly = r(mean)
+    sum quotapercent1 if country==`"`cc'"'
+    local qp = string(r(mean), "%5.3f")
+    
+    #delimit ;
+    twoway line womparl year if country==`"`cc'"', lcolor(black) lwidth(thick)
+    scheme(s1mono) xline(`ly', lcolor(red)) title(`cc') ytitle("% Women in Parlimanet")
+    xtitle("Year") note("quotaproject listed quota is `qp'%") name(c`i', replace);
+    #delimit cr
+    graph export "$OUT/quotas/countries/c`i'.eps", replace
+    local Rgraphs `Rgraphs' c`i' 
+    local ++i
+}
+graph combine `Rgraphs', scheme(s1mono)
+graph export "$OUT/quotas/ReservedCountries.eps", replace
 
 exit
-
 collapse quotayear rcode, by(country quotatype)
 gen num = 1
 collapse (sum) num, by(quotayear rcode)
@@ -1236,3 +1267,69 @@ keep rcode quotayear qCountries
 
 
 outsheet using quotaTimes.csv, comma names replace
+restore
+
+
+
+*-------------------------------------------------------------------------------
+*--- (7) 5 year averages
+*-------------------------------------------------------------------------------
+bys country (year): gen MMR5t1 = MMR5[_n+2]
+gen lnMMR5t1            = log(MMR5t1)
+xtset ccode year
+generate womparl5 = (F2.womparl + F1.womparl + womparl+L1.womparl+L2.womparl)/5
+keep if MMR5t1!=.&womparl5!=.
+
+
+qui xtreg lnMMR5t1  quota lnGDP i.year, fe cluster(ccode)
+preserve
+keep if e(sample)==1
+
+eststo: xtreg womparl5 quota lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMR5t1 quota lnGDP i.year, fe cluster(ccode)
+sum quota if e(sample)==1
+local qn = string(r(mean), "%5.3f")
+
+
+eststo: xtreg womparl5 quotaRes lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMR5t1 quotaRes lnGDP i.year, fe cluster(ccode)
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+
+eststo: xtreg womparl5 quotaCand lnGDP i.year, fe cluster(ccode)
+eststo: xtreg lnMMR5t1 quotaCand lnGDP i.year, fe cluster(ccode)
+sum quotaCand if e(sample)==1
+local qc = string(r(mean), "%5.3f")
+lab var womparl "\% Women"
+lab var lnMMRt1 "ln(MMR)"
+lab var lnTBt1 "ln(TB)"
+lab var quota "Any Quotas"
+lab var quotaRes "Quota (reserved)"
+lab var quotaCand "Quota (candidates)"
+
+
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$OUT/Quota_5yr.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+keep(quota quotaCand quotaRes) title("Gender Quotas, Women in Parliament and Health")
+mgroups("Any Quota" "Reserved Seats" "Candidate Quota", pattern(1 0 1 0 1 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y&Y&Y\\                       "
+         "\bottomrule\multicolumn{7}{p{14.8cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         " a quota, and if so its year of implementation. The proportion of     "
+         "countries with a quota, reserved seats, and a candidate quota is      "
+         "(respectively) `qn', `qr' and `qc'.  Full summary statistics are in   "
+         "table 2. Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Candidate quota"
+         " refers to those countries where submitted candidate lists must comply"
+         " with a minimum proportion of women (or each gender), but where there "
+         "are no guarantees for representation in parliament. Standard errors   "
+         "clustered at the level of the country are reported in parentheses.    "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear

@@ -34,16 +34,16 @@ replace country = "Macedonia, FYR" if country=="Macedonia"
 merge 1:1 country using quotasComplete
 
 drop if _merge==2
-gen quota = 1 if quotatype=="Reserved"
-replace quota = 2 if quotatype=="Legislated Candidate Quota"
-replace quota = 3 if quotatype=="Candidates/Reserved"
+gen quota = 2 if quotatype=="Reserved"|quotatype=="Candidates/Reserved"
+replace quota = 1 if quota==.
+*replace quota = 3 if 
 *replace quota = 1 if quota==.
 
 #delimit ;
 spmap quota using "countries/world_coords" , id(_ID) osize(vvthin)
-fcolor(BuYlRd) clmethod(unique) clbreaks(0 1 2 3 4)
+fcolor(BuYlRd) clmethod(unique) clbreaks(0 1 2)
 legend(title("Quota Type", size(*1.45) bexpand justification(left)))
-legend(label(1 "None") label(2 "Reserved")) legend(label(3 "Candidates"))
+legend(label(1 "None") label(2 "No Reserved Seats")) legend(label(3 "Reserved Seats"))
 legend(label(4 "Both")) 
 legend(symy(*1.45) symx(*1.45) size(*1.98))
 ;

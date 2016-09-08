@@ -26,7 +26,8 @@ for line in data:
 years = range(1989,2013)
 print quotas
 
-plot = plt.stackplot(years,quotas[0],quotas[1],quotas[2],quotas[3],quotas[4],quotas[5])
+plot = plt.stackplot(years,quotas[0],quotas[1],quotas[2],quotas[3],quotas[4],quotas[5],
+                     colors=['#377EB8','#7E1137','y','r','m','#55BA87'])
 plt.legend(["East Asia & Pacific","Europe & Central Asia","Latin America","Middle East & N Africa","South Asia","Sub-Saharan Africa"], loc='upper left')
 plt.xlim(1989,2012)
 plt.ylabel('Total Number of Countries with a Gender Quota')
@@ -63,7 +64,8 @@ print quotas
 
 years = range(1989,2013)
 
-plot = plt.stackplot(years,quotas[0],quotas[1],quotas[2],quotas[3],quotas[4])
+plot = plt.stackplot(years,quotas[0],quotas[1],quotas[2],quotas[3],quotas[4],
+                     colors=['#377EB8','y','r','m','#55BA87'])
 plt.legend(["East Asia & Pacific","Latin America","Middle East & N Africa","South Asia","Sub-Saharan Africa"], loc='upper left')
 plt.xlim(1989,2012)
 plt.ylabel('Total Number of Countries with a Gender Quota')
@@ -103,7 +105,8 @@ print quotas
 
 years = range(1989,2013)
 
-plot = plt.stackplot(years,quotas[0],quotas[1],quotas[2],quotas[3],quotas[4],quotas[5])
+plot = plt.stackplot(years,quotas[0],quotas[1],quotas[2],quotas[3],quotas[4],quotas[5],
+                     colors=['#377EB8','#7E1137','y','r','m','#55BA87'])
 plt.legend(["East Asia & Pacific","Europe & Central Asia","Latin America","Middle East & N Africa","South Asia","Sub-Saharan Africa"], loc='upper left')
 plt.xlim(1989,2012)
 plt.ylabel('Total Number of Countries with a Gender Quota')

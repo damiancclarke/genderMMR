@@ -122,7 +122,7 @@ lab var quota          "Any Quota"
 lab var quotaRes       "Reserved Seats"
 lab var quotaCand      "Legislated Candidate Quota"
 lab var quotayear      "Year Quota Implemented"
-lab var womparl        "\% Women in Parliament"
+lab var womparl        "% Women in Parliament"
 lab var lnMMRt1        "ln(Maternal Mortality Ratio)"
 lab var lnGDP          "ln(GDP per capita)"
 lab var quotapercent1  "Quota Size (lower house/uni-cameral)"
@@ -130,7 +130,7 @@ lab var quotapercent2  "Quota Size (upper house)"
 lab var quotap1_4      "Quota (1-4 years)"
 lab var quotap5_8      "Quota (5-8 years)"
 lab var quotap9_12     "Quota (9-12 years)"
-lab var quotap13       "Quota ($>$ 12  years)"
+lab var quotap13       "Quota (> 12  years)"
 lab var quotaResp1_4   "Reserved Seats (1-4 years)"
 lab var quotaResp5_8   "Reserved Seats (5-8 years)"
 lab var quotaResp9_12  "Reserved Seats (9-12 years)"
@@ -147,10 +147,10 @@ lab var quotaCandp1_4  "Candidates (1-4 years)"
 lab var quotaCandp5_8  "Candidates (5-8 years)"
 lab var quotaCandp9_12 "Candidates (9-12 years)"
 lab var quotaCandp13   "Candidates ($>$ 12 years)"
-lab var qVal           "Gender Quota (\%)"
-lab var qResVal        "Quota (reserved, \%)"
+lab var qVal           "Gender Quota (%)"
+lab var qResVal        "Quota (reserved, %)"
 lab var qResVal2       "Quota Size (% of seats)"
-lab var qCanVal        "Quota (candidates, \%)"
+lab var qCanVal        "Quota (candidates, %)"
 preserve
 bys country: egen qcountry = max(quota)
 collapse MMRt1 lnMMRt1, by(qcountry year)
@@ -178,28 +178,14 @@ restore
 *--- (3a) Summary statistics
 *-------------------------------------------------------------------------------
 preserve
-bys country: egen qtcountry=mean(quota)
-keep if lnMMRt1!=.&qtcountry==0
-#delimit ;
-estpost sum quota quotaRes quotaCand quotayear womparl lnMMRt1 lnGDP
-quotapercent1 quotapercent2;
-#delimit cr
-estout using "quotas/sum_Noquota.tex", replace label style(tex) `statform'
+keep if resCountry==1&lnMMRt1!=.&womparl!=.&democ!=.
+estpost sum womparl lnMMRt1 quotaSize lnGDP democ yrs_scho healthExp lnmmortt1
+estout using "SumQuota.csv", replace label `statform'
 restore
-
 preserve
-*bys country: egen qtcountry=mean(quotaRes)
-*keep if lnMMRt1!=.&qtcountry>0&qtcountry!=.
-gen quotaY  = quotayear if quotaRes==1
-gen quotap1 = quotapercent1 if quotaRes==1
-gen quotap2 = quotapercent2 if quotaRes==1
-lab var quotaY   "Year Quota Implemented"
-lab var quotap1  "Quota Size (lower house/uni-cameral)"
-lab var quotap2  "Quota Size (upper house)"
-lab var lnTBt1         "ln(Tuberculosis Mortality)"
-keep if lnMMRt1!=.
-estpost sum quotaRes quotaY womparl lnMMRt1 lnTBt1 lnGDP quotap1 quotap2
-estout using "quotas/sum_quotaRes.tex", replace label style(tex) `statform'
+keep if resCountry==0&lnMMRt1!=.&womparl!=.&democ!=.
+estpost sum womparl lnMMRt1 quotaSize lnGDP democ yrs_scho healthExp lnmmortt1 
+estout using "SumNoQuota.csv", replace label `statform'
 restore
 
     
@@ -290,6 +276,38 @@ title("Difference-in-differences estimates of effect of reserved seats");
 estimates clear
 drop s1 s2
 
+
+preserve
+drop if country=="China"
+local wt [aw=pop]
+eststo: xtreg lnMMRt1 quotaRes `cntrl1' i.year `wt', fe cluster(ccode)
+gen s1=e(sample)
+estadd local hY "Y"
+estadd local hC " "
+eststo: xtreg lnMMRt1 quotaRes `cntrl2' i.year if s1==1 `wt', fe cluster(ccode)
+gen s2=e(sample)
+estadd local hY "Y"
+estadd local hC "Y"
+
+eststo: xtreg womparl quotaRes `cntrl1' i.year if s1==1 `wt', fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC " "
+
+eststo: xtreg womparl quotaRes `cntrl2' i.year if s2==1 `wt', fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC "Y"
+
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+#delimit ;
+esttab est3 est4 est1 est2 using "$OUT/table2A-weights.csv", `epts'
+keep(quotaRes _cons)
+postfoot("Baseline controls include country and year fixed effects, the log of per capita GDP and categorical controls for the strength of intitutionalised democracy.  Full controls include baseline controls, plus average education level among women and health expenditures as a proportion of GDP. * p<0.05; ** p<0.01; *** p<0.001.")
+title("Difference-in-differences estimates of effect of reserved seats");
+#delimit cr
+estimates clear
+restore
+exit
 
 *-------------------------------------------------------------------------------
 *--- (5) Placebo
@@ -473,11 +491,6 @@ legend(order(1 "Estimate" 2 "95% CI"))
 ;
 #delimit cr
 graph export "$OUT/doseResponse-WP.eps", as(eps) replace
-
-
-
-
-
 
 exit
 

@@ -149,12 +149,13 @@ lab var quotaCandp9_12 "Candidates (9-12 years)"
 lab var quotaCandp13   "Candidates ($>$ 12 years)"
 lab var qVal           "Gender Quota (\%)"
 lab var qResVal        "Quota (reserved, \%)"
-lab var qResVal2       "Quota (reserved, \%)"
+lab var qResVal2       "Quota Size (% of seats)"
 lab var qCanVal        "Quota (candidates, \%)"
 preserve
 bys country: egen qcountry = max(quota)
 collapse MMRt1 lnMMRt1, by(qcountry year)
 keep if MMRt1!=.
+
 
 #delimit ;
 twoway line lnMMRt1 year if qcountry==1, lcolor(blue) lwidth(thick)
@@ -176,46 +177,6 @@ restore
 *-------------------------------------------------------------------------------
 *--- (3a) Summary statistics
 *-------------------------------------------------------------------------------
-/*
-preserve
-keep if lnMMRt1!=.
-#delimit ;
-estpost sum quota quotaRes quotaCand quotayear womparl lnMMRt1 lnGDP
-quotapercent1 quotapercent2;
-#delimit cr
-estout using "quotas/sum_all.tex", replace label style(tex) `statform'
-restore
-
-preserve
-bys country: egen qtcountry=mean(quota)
-keep if lnMMRt1!=.&qtcountry>0&qtcountry!=.
-#delimit ;
-estpost sum quota quotaRes quotaCand quotayear womparl lnMMRt1 lnGDP
-quotapercent1 quotapercent2;
-#delimit cr
-estout using "quotas/sum_quota.tex", replace label style(tex) `statform'
-restore
-
-preserve
-bys country: egen qtcountry=mean(quotaRes)
-keep if lnMMRt1!=.&qtcountry>0&qtcountry!=.
-#delimit ;
-estpost sum quota quotaRes quotaCand quotayear womparl lnMMRt1 lnGDP
-quotapercent1 quotapercent2;
-#delimit cr
-estout using "quotas/sum_quotaRes.tex", replace label style(tex) `statform'
-restore
-
-preserve
-bys country: egen qtcountry=mean(quotaCand)
-keep if lnMMRt1!=.&qtcountry>0&qtcountry!=.
-#delimit ;
-estpost sum quota quotaRes quotaCand quotayear womparl lnMMRt1 lnGDP
-quotapercent1 quotapercent2;
-#delimit cr
-estout using "quotas/sum_Cand.tex", replace label style(tex) `statform'
-restore
-
 preserve
 bys country: egen qtcountry=mean(quota)
 keep if lnMMRt1!=.&qtcountry==0
@@ -226,9 +187,6 @@ quotapercent1 quotapercent2;
 estout using "quotas/sum_Noquota.tex", replace label style(tex) `statform'
 restore
 
-exit
-*/
-/*
 preserve
 *bys country: egen qtcountry=mean(quotaRes)
 *keep if lnMMRt1!=.&qtcountry>0&qtcountry!=.
@@ -243,8 +201,7 @@ keep if lnMMRt1!=.
 estpost sum quotaRes quotaY womparl lnMMRt1 lnTBt1 lnGDP quotap1 quotap2
 estout using "quotas/sum_quotaRes.tex", replace label style(tex) `statform'
 restore
-exit
-*/
+
     
 lab var womparl        "\% Women"
 lab var lnMMRt1        "ln(MMR)"
@@ -252,14 +209,6 @@ lab var lnTBt1         "ln(TB)"
 lab var quota          "Any Quotas"
 lab var quotaRes       "Quota (reserved)"
 lab var quotaCand      "Quota (candidates)"
-
-
-xtreg lnMMRt1 quotaRes lnGDP i.year, fe cluster(ccode)
-xtreg lnMMRt1 quotaRes quotaCand lnGDP i.year, fe cluster(ccode)
-
-xtreg lnMMRt1 quotaRes quotaCand lnGDP yrs_school democ i.year, fe cluster(ccode)
-xtreg lnMMRt1 quotaRes quotaCand lnGDP yrs_school health_exp democ i.year i.contcode#i.year, fe cluster(ccode)
-xtreg lnMMRt1 quotaRes quotaCand lnGDP i.year if e(sample)==1, fe cluster(ccode)
 
 
 *-------------------------------------------------------------------------------
@@ -270,9 +219,276 @@ local opts replace cells(b(star fmt(%-9.3f)) ci(fmt(%-9.2f)  par("(" "," ")"))
                          p(fmt(%-9.3f) par([\emph{p}= ]) )) stats 
               (r2 N, fmt(%9.3f %9.0g) label(R-Squared Observations)) booktabs
               starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label;
+local epts replace cells(b(star fmt(%-9.3f)) ci(fmt(%-9.2f)  par("(" "," ")"))
+p(fmt(%-9.3f) par([p= ]) )) plain stats(r2 N hY hC, fmt(%9.3f %9.0g)
+label(R-Squared Observations "Baseline Controls" "Full Controls"))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+mgroups("Women in Parliament" "ln(Maternal Mortality Ratio)", pattern(1 0 1 0))
+mtitles((1) (2) (3) (4))
+;
 #delimit cr
-*local cntrl  lnGDP i.democ health_e
-local cntrl  lnGDP i.democ
+local cntrl1  lnGDP i.democ 
+local cntrl2  lnGDP i.democ healthExp yrs_sch
+
+eststo: xtreg lnMMRt1 quotaRes `cntrl1' i.year, fe cluster(ccode)
+gen s1=e(sample)
+estadd local hY "Y"
+estadd local hC " "
+eststo: xtreg lnMMRt1 quotaRes `cntrl2' i.year if s1==1, fe cluster(ccode)
+gen s2=e(sample)
+estadd local hY "Y"
+estadd local hC "Y"
+
+eststo: xtreg womparl quotaRes `cntrl1' i.year if s1==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC " "
+
+eststo: xtreg womparl quotaRes `cntrl2' i.year if s2==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC "Y"
+
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+#delimit ;
+esttab est3 est4 est1 est2 using "$OUT/table2A.csv", `epts'
+keep(quotaRes _cons)
+postfoot("Baseline controls include country and year fixed effects, the log of per capita GDP and categorical controls for the strength of intitutionalised democracy.  Full controls include baseline controls, plus average education level among women and health expenditures as a proportion of GDP. * p<0.05; ** p<0.01; *** p<0.001.")
+title("Difference-in-differences estimates of effect of reserved seats");
+esttab est3 est4 est1 est2 using "$OUT/table2A-Full.csv", `epts'
+postfoot("Baseline controls include country and year fixed effects, the log of per capita GDP and categorical controls for the strength of intitutionalised democracy.  Full controls include baseline controls, plus average education level among women and health expenditures as a proportion of GDP. * p<0.05; ** p<0.01; *** p<0.001.")
+title("Difference-in-differences estimates of effect of reserved seats");
+#delimit cr
+estimates clear
+drop s1 s2
+
+lab var lnMMRt1DHS "ln(MMR)"
+eststo: xtreg lnMMRt1DHS quotaRes `cntrl1' i.year, fe cluster(ccode)
+gen s1=e(sample)
+estadd local hY "Y"
+estadd local hC " "
+eststo: xtreg lnMMRt1DHS quotaRes `cntrl2' i.year if s1==1, fe cluster(ccode)
+gen s2=e(sample)
+estadd local hY "Y"
+estadd local hC "Y"
+
+eststo: xtreg womparl quotaRes `cntrl1' i.year if s1==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC " "
+
+eststo: xtreg womparl quotaRes `cntrl2' i.year if s2==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC "Y"
+
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+#delimit ;
+esttab est3 est4 est1 est2 using "$OUT/table2A-DHS.csv", `epts'
+keep(quotaRes _cons)
+postfoot("Baseline controls include country and year fixed effects, the log of per capita GDP and categorical controls for the strength of intitutionalised democracy.  Full controls include baseline controls, plus average education level among women and health expenditures as a proportion of GDP. * p<0.05; ** p<0.01; *** p<0.001.")
+title("Difference-in-differences estimates of effect of reserved seats");
+#delimit cr
+estimates clear
+drop s1 s2
+
+
+*-------------------------------------------------------------------------------
+*--- (5) Placebo
+*-------------------------------------------------------------------------------
+eststo: xtreg lnmmortt1 quotaRes `cntrl1' i.year, fe cluster(ccode)
+gen s1=e(sample)
+estadd local hY "Y"
+estadd local hC " "
+eststo: xtreg lnmmortt1 quotaRes `cntrl2' i.year if s1==1, fe cluster(ccode)
+gen s2=e(sample)
+estadd local hY "Y"
+estadd local hC "Y"
+
+eststo: xtreg womparl quotaRes `cntrl1' i.year if s1==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC " "
+
+eststo: xtreg womparl quotaRes `cntrl2' i.year if s2==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC "Y"
+
+
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est3 est4 est1 est2 using "$OUT/table-placebo.csv", `epts'
+keep(quotaRes _cons)
+title("Difference-in-differences estimates of effect of reserved seats");
+#delimit cr
+estimates clear
+drop s1 s2
+
+*-------------------------------------------------------------------------------
+*--- (6) Extensive
+*-------------------------------------------------------------------------------
+eststo: xtreg lnMMRt1 qResVal2 `cntrl1' i.year, fe cluster(ccode)
+gen s1=e(sample)
+estadd local hY "Y"
+estadd local hC " "
+eststo: xtreg lnMMRt1 qResVal2 `cntrl2' i.year if s1==1, fe cluster(ccode)
+gen s2=e(sample)
+estadd local hY "Y"
+estadd local hC "Y"
+
+eststo: xtreg womparl qResVal2 `cntrl1' i.year if s1==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC " "
+
+eststo: xtreg womparl qResVal2 `cntrl2' i.year if s2==1, fe cluster(ccode)
+estadd local hY "Y"
+estadd local hC "Y"
+
+sum qResVal2 if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+#delimit ;
+esttab est3 est4 est1 est2 using "$OUT/table-Extensive.csv", `epts'
+keep(qResVal2 _cons)
+postfoot("Baseline controls include country and year fixed effects, the log of per capita GDP and categorical controls for the strength of intitutionalised democracy.  Full controls include baseline controls, plus average education level among women and health expenditures as a proportion of GDP. * p<0.05; ** p<0.01; *** p<0.001.")
+title("Extensive Margin Effect of Reserved Seats");
+#delimit cr
+estimates clear
+drop s1 s2
+
+
+*-------------------------------------------------------------------------------
+*--- (7) Dynamic
+*-------------------------------------------------------------------------------
+#delimit ;
+local epts replace cells(b(star fmt(%-9.3f)) ci(fmt(%-9.2f)  par("(" "," ")"))
+                         p(fmt(%-9.3f) par([p= ]) )) plain
+stats(r2 N Fs ps hY hC, fmt(%9.3f %9.0g %9.3f %9.3f)
+      label(R-Squared Observations "Joint Siginificance of Pre-Trend (F-Test)"
+            "Joint Siginificance of Pre-Trend (p-values)" "Baseline Controls"
+            "Full Controls")) mtitles((1) (2))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+;
+#delimit cr
+    
+local quotarD quotaResn13 quotaResn9_12 quotaResn5_8 quotaResn1_4 /*
+*/            quotaResp1_4 quotaResp5_8 quotaResp9_12 quotaResp13
+eststo: xtreg lnMMRt1 `quotarD' `cntrl1' i.year, fe cluster(ccode)
+gen s1 = e(sample)==1
+test quotaResn13 quotaResn9_12 quotaResn5_8 quotaResn1_4
+estadd scalar Fs r(F)
+estadd scalar ps r(p)
+estadd local hY "Y"
+estadd local hC " "
+eststo: xtreg lnMMRt1 `quotarD' `cntrl2' i.year if s1==1, fe cluster(ccode)
+test quotaResn13 quotaResn9_12 quotaResn5_8 quotaResn1_4
+estadd scalar Fs r(F)
+estadd scalar ps r(p)
+estadd local hY "Y"
+estadd local hC "Y"
+
+
+#delimit ;
+esttab est1 est2 using "$OUT/table-Dynamic.csv", `epts'
+keep(`quotarD' _cons)
+postfoot("Baseline controls include country and year fixed effects, the log of per capita GDP and categorical controls for the strength of intitutionalised democracy.  Full controls include baseline controls, plus average education level among women and health expenditures as a proportion of GDP. * p<0.05; ** p<0.01; *** p<0.001.")
+title("Extensive Margin Effect of Reserved Seats");
+#delimit cr
+estimates clear
+drop s1
+exit
+
+
+*-------------------------------------------------------------------------------
+*--- (7) Extensive plot
+*-------------------------------------------------------------------------------
+local nquint 4
+*xtile quotaSize, gen(qsize)
+gen qResQ1= quotaRes==1&quotaSize>0&quotaSize<10
+gen qResQ2= quotaRes==1&quotaSize>=10&quotaSize<20
+gen qResQ3= quotaRes==1&quotaSize>=20&quotaSize<30
+gen qResQ4= quotaRes==1&quotaSize>=30
+
+
+xtreg lnMMRt1 `cntrl1' i.year qResQ*, fe cluster(ccode)
+gen MMRest = .
+gen MMRub  = .
+gen MMRlb  = .
+gen quant  = .
+foreach num of numlist 1(1)`nquint' {
+    replace quant=`num' in `num'
+    replace MMRest = _b[qResQ`num'] in `num'
+    replace MMRlb  = _b[qResQ`num']-1.96*_se[qResQ`num'] in `num'
+    replace MMRub  = _b[qResQ`num']+1.96*_se[qResQ`num'] in `num'
+}
+
+xtreg womparl `cntrl' i.year qResQ*, fe cluster(ccode)
+gen WPest  = .
+gen WPub   = .
+gen WPlb   = .
+gen quant2 = .
+foreach num of numlist 1(1)`nquint' {
+    replace quant2 = `num'.1 in `num'
+    replace WPest  = _b[qResQ`num'] in `num'
+    replace WPlb   = _b[qResQ`num']-1.96*_se[qResQ`num'] in `num'
+    replace WPub   = _b[qResQ`num']+1.96*_se[qResQ`num'] in `num'
+}
+
+local m1 mcolor(blue) msymbol(Oh)
+local m2 mcolor(red) msymbol(S)
+local d {&Delta}
+
+#delimit ;
+twoway scatter MMRest quant, yaxis(1) ylabel(0.8(-0.2)-0.8, axis(1)) `m1' ||
+       scatter WPest quant2, yaxis(2) ylabel(-40(10)40, axis(2)) `m2' ||
+       rcap MMRlb MMRub quant, yaxis(1) lcolor(blue) || 
+       rcap WPlb WPub  quant2, yaxis(2) lcolor(red) xlabel(1(1)`nquint')  
+scheme(s1mono) yline(0, lcolor(black) lpattern(dash))
+ytitle("`d' ln(Maternal Mortality)", axis(1))
+ytitle("`d' % Women in Parliament", axis(2))
+xtitle("Size of Reserved Seat Quota (Percentiles)")
+legend(order(1 "`d' ln(Maternal Mortality)" 3 "`d' % Women in Parliament"))
+;
+#delimit cr
+graph export "$OUT/doseResponse.eps", as(eps) replace
+
+#delimit ;
+twoway scatter MMRest quant, `m1' ||
+       rcap MMRlb MMRub quant, lcolor(blue) lwidth(medthick)
+scheme(lean1) yline(0, lcolor(black) lpattern(dash))
+xlabel(1 "0.1-9%" 2 "10-19%" 3 "20-29%" 4 "30%")
+ytitle("`d' ln(Maternal Mortality)")
+xtitle("Size of Reserved Seat Quota (Percent)")
+legend(order(1 "Estimate" 2 "95% CI"))
+;
+#delimit cr
+graph export "$OUT/doseResponse-MMR.eps", as(eps) replace
+
+#delimit ;
+twoway scatter WPest quant, `m2' ||
+       rcap WPlb WPub quant, lcolor(red) lwidth(medthick)
+scheme(lean1) yline(0, lcolor(black) lpattern(dash))
+xlabel(1 "0.1-9%" 2 "10-19%" 3 "20-29%" 4 "30%")
+ytitle("`d' % Women in Parliament")
+xtitle("Size of Reserved Seat Quota (Percent)")
+legend(order(1 "Estimate" 2 "95% CI"))
+;
+#delimit cr
+graph export "$OUT/doseResponse-WP.eps", as(eps) replace
+
+
+
+
+
+
+exit
+
+
+
+
+
+
+
+
+
 
 eststo: xtreg lnMMRt1 quotaRes `cntrl' i.year, fe cluster(ccode)
 eststo: xtreg womparl quotaRes `cntrl' i.year if e(sample), fe cluster(ccode)
@@ -307,6 +523,41 @@ postfoot("Country and Year FE &Y&Y&Y&Y \\                       "
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
+
+eststo: xtreg lnmmortt1 quotaRes `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg womparl quotaRes `cntrl' i.year if e(sample), fe cluster(ccode)
+sum quotaRes if e(sample)==1
+local qr = string(r(mean), "%5.3f")
+
+eststo: xtreg lnmmortt1 qResVal2 `cntrl' i.year, fe cluster(ccode)
+eststo: xtreg womparl qResVal2 `cntrl' i.year if e(sample), fe cluster(ccode)
+sum qResVal if e(sample)==1
+local qr2 = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est2 est1 est4 est3 using "$OUT/table2-placebo.tex", `opts'
+keep(quotaRes qResVal2 _cons)
+title("Difference-in-differences estimates of effect of reserved seats")
+mgroups("Has Reserved Seats" "Proportion of Reserved Seats", pattern(1 0 1 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("Country and Year FE &Y&Y&Y&Y \\                       "
+         "\bottomrule\multicolumn{5}{p{14.2cm}}{\begin{footnotesize} Quota data "
+         "is coded from the quotaproject.org, recording whether each country has"
+         "seats reserved for women, and if so the year of implementation of the "
+         "the quota law. The proportion of     "
+         "countries with reserved seats is `qr'.  The average proportion of     "
+         "reserved seats in these countries is `qr2'.  Full summary statistics are in   "
+         "table 1. Reserved Seats refers"
+         " only to those countries where a fixed proportion of representation is"
+         " guaranteed for women with binding sanctions in place. Standard errors"
+         "are clustered at the level of the country. 95\% confidence intervals  "
+         "are reported in round brackets, and \emph{p}-values associated with   "
+         "each coefficient are in square brackets."
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
 
 preserve
 drop if country=="China"
@@ -348,7 +599,7 @@ restore
 
 local nquint 7
 
-xtile quotaQuant = quotaSize, nquantiles(`nquint')
+xtile quotaQuant = quotaSize, nquantiles(`nquint') genp(sizeQuant)
 foreach num of numlist 1(1)`nquint' {
     gen qResQ`num'= quotaRes==1&quotaQuant==`num'
 }

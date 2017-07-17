@@ -13,12 +13,20 @@ cap log close
 
 global DAT "~/investigacion/2013/WorldMMR/Data/sulfaSuffrage"
 global OUT "~/investigacion/2013/WorldMMR/Results/Suffrage"
+global DAT "/media/damian/DCC-0001/investigacion/2013/WorldMMR/Data/sulfaSuffrage"
+global OUT "/media/damian/DCC-0001/investigacion/2013/WorldMMR/Results/Suffrage"
+
+cap which spmap
+if _rc!=0 ssc install spmap
 
 *-------------------------------------------------------------------------------
 *--- (1) Generate data
 *-------------------------------------------------------------------------------     
 use "$DAT/historic_mortality.dta", clear
 joinby birth_state using "$DAT/Miller_women_suffrage.dta", unmatched(master)
+drop _merge
+merge m:1 birth_state using "$DAT/flfp_1940.dta"
+rename employed flfp
 
 gen    early = year_suff
 recode early (min/1919 = 1) (1920 = 0)
@@ -28,6 +36,9 @@ gen    post_y = post*y
 gen    early_y = early*y
 gen    early_post = early*post
 gen    early_post_y = post_y*early
+gen    post_flfp    = post*flfp
+gen    flfp_y       = flfp*y
+
 
 gen ln_mmr = ln(mmr)
 gen ln_ipr = ln(inf)
@@ -58,7 +69,7 @@ restore
 *--- (3) Regressions
 *-------------------------------------------------------------------------------     
 local c1  post early early_post
-local c2  post post_y y early early_post early_post_y early_y
+local c2  post early_post early_post_y early_y y post_y early 
 local wt  [pw = pop]
 local cnd if birth_year>=1925&birth_year<=1943
 local se  abs(birth_state) cluster(birth_state)
@@ -79,7 +90,7 @@ eststo: areg ln_ipr `c2' `wt' `cnd', `se'
 esttab est1 est2 est3 est4 using "$OUT/SulfaSuffrage_Regs.tex", booktabs
 cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats 
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) drop(early)
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) drop(early) order(_cons `c2')
 collabels(none) label mlabels(, none) replace
 mgroups("ln(Maternal Mortality Ratio)" "ln(Pneumonia Mortality Rate)", pattern(1 0 1 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
@@ -89,12 +100,63 @@ postfoot("\bottomrule\multicolumn{5}{p{15.2cm}}{\begin{footnotesize} Each "
          "errors by state.  States are weighted by their population."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+
+esttab est2 est4 using "$OUT/SulfaSuffrage_Regs_2cols.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats 
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) drop(early) order(_cons `c2')
+collabels(none) label mlabels("ln(MMR)" "ln(Pneumonia)") replace
+title("Difference-in-differences estimates of the effect of Sulfa Drugs"
+      \label{SulfaReg})
+postfoot("\bottomrule\multicolumn{3}{p{10.8cm}}{\begin{footnotesize} Each "
+         "regression includes state fixed effects and clusters standard"
+         "errors by state.  States are weighted by their population."
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+
+
 #delimit cr
 estimates clear
 
+
+
 gen mortdat = 1 if birth_year>=1925&birth_year<=1943&mmr!=.
 bys birth_state: egen mortcover = total(mortdat)
+
+
+eststo: areg ln_mmr `c2' `wt' `cnd', `se'
+eststo: areg ln_mmr `c2' post_flfp flfp_y `wt' `cnd', `se'
 local cnd if birth_year>=1925&birth_year<=1943&mortcover==19
+eststo: areg ln_mmr `c2' `wt' `cnd', `se'
+eststo: areg ln_mmr `c2' post_flfp flfp_y `wt' `cnd', `se'
+
+lab var post_flfp "FLFP $\times$ Post Sulfa"
+lab var flfp_y    "FLFP $\times$ Time"
+
+#delimit ;
+esttab est1 est3 est2 est4 using "$OUT/SulfaSuffrage_Regs_FLFP.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats 
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) drop(early) order(_cons `c2')
+collabels(none) label mlabels("ln(MMR)" "ln(MMR)" "ln(MMR)" "ln(MMR)") replace
+mgroups("Original Regressions" "FLFP Controls", pattern(1 0 1 0)
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+title("Difference-in-differences estimates of the effect of Sulfa Drugs (FLFP controls)"
+      \label{SulfaRegFLFP})
+postfoot("\bottomrule\multicolumn{5}{p{13.8cm}}{\begin{footnotesize} Each "
+         "regression includes state fixed effects and clusters standard   "
+         "errors by state.  States are weighted by their population.      "
+         "Columns 1 and 2 replicate original regressions for the full     "
+         "sample and balanced mortality data sample.  Columns 3 and 4 add "
+         "indicators for baseline female labour force participation rate  "
+         "(from the 1930 census microdata file) interacted with the       "
+         "post-Sulfa dummy and a linear time trend."
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+exit
+
 eststo: areg ln_mmr `c1' `wt' `cnd', `se'
 eststo: areg ln_mmr `c2' `wt' `cnd', `se'
 eststo: areg ln_ipr `c1' `wt' `cnd', `se'
@@ -116,6 +178,20 @@ postfoot("\bottomrule\multicolumn{5}{p{15.2cm}}{\begin{footnotesize} Each "
          "are used, resulting in a balanced panel of 34 states from 1925-1934."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+esttab est2 est4 using "$OUT/SulfaSuffrage_Regs_cover_2cols.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats 
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) drop(early) order(_cons `c2')
+collabels(none) label mlabels("ln(MMR)" "ln(Pneumonia)") replace
+title("Difference-in-differences estimates of the effect of Sulfa Drugs (Balanced Data)")
+postfoot("\bottomrule\multicolumn{3}{p{10.9cm}}{\begin{footnotesize} Each "
+         "regression includes state fixed effects and clusters standard"
+         "errors by state.  States are weighted by their population. In"
+         "these specifications only states with mortality data for all years"
+         "are used, resulting in a balanced panel of 34 states from 1925-1934."
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+
 #delimit cr
 
 

@@ -203,10 +203,22 @@ lab var MMRt1 "Maternal Mortality Ratio"
 lab var mmortt1 "Male Mortality Rate (15-49)"
 lab var birthAttendt1 "Percent of Births Attended by Skilled Staff"
 lab var antenatalt1   "Percent of Pregnancies Receiving Prenatal Care"
+lab var healthExpt1 "Health Expenditure as a \% of GDP"
+lab var fEduct1     "Women's Education in Years"
+lab var IMFt1       "Female Infant Mortality Rate (per 1,000 births)"
+lab var IMMt1       "Male Infant Mortality Rate (per 1,000 births)"
+
+local Svars1 womparl MMRt1 quotaRes lnGDP mmortt1
+local Svars2 antenatalt1 birthAttendt1 healthExpt1 fEduct1 IMFt1 IMMt1
 
 reg lnMMRt1 i.year quotaRes lnGDP
-estpost sum womparl MMRt1 quotaRes lnGDP antenatalt1 birthAttendt1 mmortt1 if e(sample)==1
+estpost sum `Svars1' `Svars2' if e(sample)==1
 estout using "$OUT/SumQuota.tex", replace label `statform' style(tex)
+
+reg lnMMRt1 i.year quotaRes quotaCand lnGDP
+local Svars1 womparl MMRt1 quotaRes quotaCand lnGDP mmortt1
+estpost sum `Svars1' `Svars2' if e(sample)==1
+estout using "$OUT/SumQuota-CR.tex", replace label `statform' style(tex)
 
 
 *-------------------------------------------------------------------------------
@@ -216,156 +228,236 @@ local cntrl1  lnGDP i.democ
 local cntrl1b lnGDP i.democ healthExp
 local cntrl2  lnGDP i.democ healthExp yrs_school 
 
-eststo: xtreg lnMMRt1 i.year quotaRes lnGDP , fe cluster(ccode)
-eststo: xtreg womparl quotaRes lnGDP i.year if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnMMRt1 lnGDP    i.year quotaRes,                 fe cluster(ccode)
+eststo: xtreg womparl lnGDP    i.year quotaRes if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `cntrl1' i.year quotaRes,                 fe cluster(ccode)
+eststo: xtreg womparl `cntrl1' i.year quotaRes if e(sample)==1, fe cluster(ccode)
 
-eststo: xtreg lnMMRt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
-eststo: xtreg womparl quotaRes `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-
-eststo: xtreg lnMMRt1 quotaRes `cntrl2' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl quotaRes `cntrl2' i.year if e(sample)==1, fe cluster(ccode)
-
-xtreg lnMMRt1 quotaRes `cntrl1' i.year, fe cluster(ccode)
-eststo: xtreg lnMMRt1 quotaRes `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl quotaRes `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg lnMMRt1 quotaRes lnGDP i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl quotaRes lnGDP i.year if e(sample)==1, fe cluster(ccode)
+*BALANCED
+xtreg         lnMMRt1 `cntrl1' quotaRes i.year,                 fe cluster(ccode)
+eststo: xtreg lnMMRt1 `cntrl1' quotaRes i.year if e(sample)==1, fe cluster(ccode)
+eststo: xtreg womparl `cntrl1' quotaRes i.year if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnMMRt1 lnGDP    quotaRes i.year if e(sample)==1, fe cluster(ccode)
+eststo: xtreg womparl lnGDP    quotaRes i.year if e(sample)==1, fe cluster(ccode)
 
 sum quotaRes
 local qr = string(r(mean), "%5.3f")
 
 #delimit ;
-esttab est1 est3 est2 est4 using "$OUT/quotaDifDif.tex", booktabs
+***EXPORT DIFF-IN-DIFF ESTIMATES FOR MMR;
+esttab est1 est3 using "$OUT/quotaDifDif_MMR.tex", booktabs
 cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
 collabels(none) label mlabels(, none) replace
-mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0)
+mgroups("ln(Maternal Mortality Ratio)", pattern(1 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Difference-in-differences estimates of the effect of Reserved Seats"\label{qDD1})
-postfoot("GDP Control & Y & Y & Y & Y \\"
-         "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{13.2cm}}{\begin{footnotesize} Each "
-         "regression includes country and year fixed effects and clusters "
-         "standard errors by country. A number of (small) countries do not"
-         "have a democracy score from Polity IV. Refer to table           "
-         "\ref{qDDsamp} for the estimates       "
+title("Estimates of the Effect of Reserved Seats on Maternal Mortality"\label{qDD1})
+postfoot("GDP Control          & Y & Y \\"
+         "Democracy Indicators &   & Y \\"
+         "\bottomrule\multicolumn{3}{p{9.2cm}}{\begin{footnotesize} Each   "
+         "regression includes country and year fixed effects and clusters  "
+         "standard errors by country. A number of (small) countries do not "
+         "have a democracy score from Polity IV, and so are omitted in     "
+         "column 2. Refer to Table \ref{tab:altSpecs} for the estimates    "
          "consistently using the sample where all covariates are available."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
 
-#delimit ;
-esttab est9 est7 est10 est8 using "$OUT/quotaDifDif-samp.tex", booktabs
+***EXPORT DIFF-IN-DIFF ESTIMATES FOR WOMEN IN PARLIAMENT;
+esttab est2 est4 using "$OUT/quotaDifDif_WP.tex", booktabs
 cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
 collabels(none) label mlabels(, none) replace
-mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0)
-        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Difference-in-differences estimates of the effect of Reserved Seats"\label{qDDsamp})
-postfoot("GDP Control & Y & Y & Y & Y\\"
-         "Democracy Indicators &  & Y  &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{13.2cm}}{\begin{footnotesize} Refer to"
-         "table \ref{qDD} for notes."
+title("The Effect of Reserved Seats on the Percent of Women in Parliament"
+      \label{qDDWP}) mgroups("\% Women in Parliament", pattern(1 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("GDP Control          & Y & Y \\"
+         "Democracy Indicators &   & Y \\"
+         "\bottomrule\multicolumn{3}{p{8.4cm}}{\begin{footnotesize}      "
+         "Refer to notes in Table \ref{qDD1}.  Identical specifications  "
+         "are estimated, replacing the natural logarithm of maternal     "
+         "mortality with the percent of women in parliament as the       "
+         "dependent variable."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
-estimates clear
 
 
 preserve
 drop if country=="China"|country=="India"
 local wt [aw=pop]
-eststo: xtreg lnMMRt1 i.year quotaRes lnGDP  `wt', fe cluster(ccode)
-eststo: xtreg womparl quotaRes lnGDP i.year if e(sample)==1 `wt', fe cluster(ccode)
+eststo: xtreg lnMMRt1 lnGDP i.year quotaRes `wt', fe cluster(ccode)
+eststo: xtreg womparl lnGDP i.year quotaRes if e(sample)==1 `wt', fe cluster(ccode)
 eststo: xtreg lnMMRt1 `cntrl1' i.year quotaRes `wt', fe cluster(ccode)
 eststo: xtreg womparl quotaRes `cntrl1' i.year if e(sample)==1 `wt', fe cluster(ccode)
-eststo: xtreg lnMMRt1 quotaRes `cntrl2' i.year if e(sample)==1 `wt', fe cluster(ccode)
-eststo: xtreg womparl quotaRes `cntrl2' i.year if e(sample)==1 `wt', fe cluster(ccode)
-#delimit ;
-esttab est1 est3 est2 est4 using "$OUT/quotaDifDif-wt.tex", booktabs
-cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
-collabels(none) label mlabels(, none) replace
-mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0)
-        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Difference-in-differences effect of Reserved Seats (Population Weighting)"\label{qDD})
-postfoot("GDP Control & Y & Y & Y & Y \\"
-         "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{13.2cm}}{\begin{footnotesize} Refer to  "
-         "table \ref{qDD} for notes. Population weights are used rather than   "
-         "unweighted regressions.  India and China are removed from the sample "
-         "otherwise regression results are largely driven by these two         "
-         "countries which have a population an order of magnitude larger than  "
-         "the remaining countries."
-         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
 restore
-estimates clear
-
-
-
-eststo: xtreg lnMMRt1 i.year quotaRes quotaCand lnGDP , fe cluster(ccode)
-eststo: xtreg womparl quotaRes quotaCand lnGDP i.year if e(sample)==1, fe cluster(ccode)
-
-eststo: xtreg lnMMRt1 `cntrl1' i.year quotaRes quotaCand, fe cluster(ccode)
-eststo: xtreg womparl quotaRes quotaCand `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-lab var quotaCand "Candidate Quota"
-
-#delimit ;
-esttab est1 est3 est2 est4 using "$OUT/quotaDifDif-CR.tex", booktabs
-cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes quotaCand _cons)
-collabels(none) label mlabels(, none) replace
-mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0)
-        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Difference-in-differences estimates of the effect of Reserved Seats"\label{qDD-CR})
-postfoot("GDP Control & Y & Y & Y & Y \\"
-         "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{13.2cm}}{\begin{footnotesize} Each "
-         "regression includes country and year fixed effects and clusters "
-         "standard errors by country."
-         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
-estimates clear
 
 eststo: xtreg MMRt1 i.year quotaRes lnGDP , fe cluster(ccode)
 eststo: xtreg MMRt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
 
 #delimit ;
-esttab est1 est2 using "$OUT/quotaDifDif-level.tex", booktabs
+***EXPORT DIFF-IN-DIFF ESTIMATES FOR ALTERNATIVE SPECIFICATIONS;
+esttab est1 est3 est9 est11 est7 est5 est13 est14 using "$OUT/MMR_ALT.tex",
+b(%-9.3f) se(%-9.3f) brackets noobs keep(quotaRes _cons) nonotes
+mlabels(, none) stats(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+nonumbers style(tex) fragment replace noline label
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) ;
+
+esttab est2 est4 est10 est12 est8 est6 using "$OUT/WP_ALT.tex",
+b(%-9.3f) se(%-9.3f) brackets noobs keep(quotaRes _cons) nonotes
+mlabels(, none) stats(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+nonumbers style(tex) fragment replace noline label
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) ;
+#delimit cr
+estimates clear
+
+
+*-------------------------------------------------------------------------------
+*--- (4b) Both Candidate and Reserved Seat Quotas
+*-------------------------------------------------------------------------------
+lab var quotaCand "Candidate Quota"
+local qvars quotaRes quotaCand 
+
+eststo: xtreg lnMMRt1 lnGDP    i.year `qvars',                 fe cluster(ccode)
+eststo: xtreg womparl lnGDP    i.year `qvars' if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `cntrl1' i.year `qvars',                 fe cluster(ccode)
+eststo: xtreg womparl `cntrl1' i.year `qvars' if e(sample)==1, fe cluster(ccode)
+
+*BALANCED
+xtreg         lnMMRt1 `cntrl1' i.year `qvars',                 fe cluster(ccode)
+eststo: xtreg lnMMRt1 `cntrl1' i.year `qvars' if e(sample)==1, fe cluster(ccode)
+eststo: xtreg womparl `cntrl1' i.year `qvars' if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnMMRt1 lnGDP    i.year `qvars' if e(sample)==1, fe cluster(ccode)
+eststo: xtreg womparl lnGDP    i.year `qvars' if e(sample)==1, fe cluster(ccode)
+
+
+#delimit ;
+***EXPORT DIFF-IN-DIFF ESTIMATES FOR MMR;
+esttab est1 est3 using "$OUT/quotaDifDif_MMR-CR.tex", booktabs
 cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(`qvars' _cons)
 collabels(none) label mlabels(, none) replace
-mgroups("Maternal Mortality Ratio", pattern(1 0)
+mgroups("ln(Maternal Mortality Ratio)", pattern(1 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Difference-in-differences estimates of the effect of Reserved Seats"\label{qDDlevel})
-postfoot("GDP Control & Y & Y \\"
-         "Democracy Indicators &  & Y \\"
-         "\bottomrule\multicolumn{3}{p{8.2cm}}{\begin{footnotesize} Each "
-         "regression includes country and year fixed effects and clusters "
-         "standard errors by country."
+title("Estimates of the Effect of Quotas on Maternal Mortality"\label{qDD-CR})
+postfoot("GDP Control          & Y & Y \\"
+         "Democracy Indicators &   & Y \\"
+         "\bottomrule\multicolumn{3}{p{9.2cm}}{\begin{footnotesize} Each   "
+         "regression includes country and year fixed effects and clusters  "
+         "standard errors by country. A number of (small) countries do not "
+         "have a democracy score from Polity IV, and so are omitted in     "
+         "column 2. Refer to table \ref{tab:altSpecsCR} for the estimates  "
+         "consistently using the sample where all covariates are available."
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+
+***EXPORT DIFF-IN-DIFF ESTIMATES FOR WOMEN IN PARLIAMENT;
+esttab est2 est4 using "$OUT/quotaDifDif_WP-CR.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(`qvars' _cons)
+collabels(none) label mlabels(, none) replace
+title("The Effect of Quotas on the Percent of Women in Parliament"
+      \label{qDDWP-CR}) mgroups("\% Women in Parliament", pattern(1 0)
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+postfoot("GDP Control          & Y & Y \\"
+         "Democracy Indicators &   & Y \\"
+         "\bottomrule\multicolumn{3}{p{8.4cm}}{\begin{footnotesize}       "
+         "Refer to notes in table \ref{qDD-CR}.  Identical specifications "
+         "are estimated, replacing the natural logarithm of maternal      "
+         "mortality with the percent of women in parliament as the        "
+         "dependent variable."
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+
+
+preserve
+drop if country=="China"|country=="India"
+local wt [aw=pop]
+eststo: xtreg lnMMRt1 i.year `qvars' lnGDP  `wt', fe cluster(ccode)
+eststo: xtreg womparl `qvars' lnGDP i.year if e(sample)==1 `wt', fe cluster(ccode)
+eststo: xtreg lnMMRt1 `cntrl1' i.year `qvars' `wt', fe cluster(ccode)
+eststo: xtreg womparl `qvars' `cntrl1' i.year if e(sample)==1 `wt', fe cluster(ccode)
+restore
+
+eststo: xtreg MMRt1 i.year `qvars' lnGDP , fe cluster(ccode)
+eststo: xtreg MMRt1 `cntrl1' i.year `qvars', fe cluster(ccode)
+
+#delimit ;
+***EXPORT DIFF-IN-DIFF ESTIMATES FOR ALTERNATIVE SPECIFICATIONS;
+esttab est1 est3 est9 est11 est7 est5 est13 est14 using "$OUT/MMR_ALT-CR.tex",
+b(%-9.3f) se(%-9.3f) brackets noobs keep(`qvars' _cons) nonotes
+mlabels(, none) stats(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+nonumbers style(tex) fragment replace noline label
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) ;
+
+esttab est2 est4 est10 est12 est8 est6 using "$OUT/WP_ALT-CR.tex",
+b(%-9.3f) se(%-9.3f) brackets noobs keep(`qvars' _cons) nonotes
+mlabels(, none) stats(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+nonumbers style(tex) fragment replace noline label
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) ;
+#delimit cr
+estimates clear
+
+*-------------------------------------------------------------------------------
+*--- (4c) Extensive Margin Impacts
+*-------------------------------------------------------------------------------
+
+****SIZE
+local cntrl1  lnGDP i.democ
+replace quotaSize=0 if quotaSize==.
+gen quotaXSize=quotaRes*quotaSize
+lab var quotaXSize "Reserved Seats $\times$ Quota Size"
+
+eststo: xtreg lnMMRt1 lnGDP    i.year quotaXSize,                 fe cluster(ccode)
+eststo: xtreg womparl lnGDP    i.year quotaXSize if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnMMRt1 `cntrl1' i.year quotaXSize,                 fe cluster(ccode)
+eststo: xtreg womparl `cntrl1' i.year quotaXSize if e(sample)==1, fe cluster(ccode)
+
+sum quotaRes
+local qr = string(r(mean), "%5.3f")
+
+#delimit ;
+esttab est1 est3 est2 est4 using "$OUT/quotaDifDif_size.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaXSize _cons)
+collabels(none) label mlabels(, none) replace
+mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0)
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+title("Intensive Margin Impacts of Reserved Seats (By Quota Size)"\label{qIDD})
+postfoot("GDP Control & Y & Y & Y & Y \\"
+         "Democracy Indicators &  & Y &  & Y \\"
+         "\bottomrule\multicolumn{5}{p{14.8cm}}{\begin{footnotesize} We    "
+         "present estimates of the impact of the \emph{size} of a reserved "
+         "seat quota on maternal mortality (columns 1-2) and women in      "
+         "parliament (columns 3-4). The independent variable of interest   "
+         "(the size of the quota) is equal to zero whenever reserved seats "
+         "for women are not in place in a country, and equal to the        "
+         "size of the quota when a reserved seat quota is implemented.     "
+         "Coefficients are thus interpreted as the effect of an additional "
+         "1 percent of seats reserved for women on rates of maternal       "
+         "mortality and the percentage of women in parliament. Each"
+         " regression includes country and year fixed effects and clusters "
+         "standard errors by country. "
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
 
+****TIME
 gen yearsQuota = max(0,year-quotayear+1)
 gen quotaXYears=quotaRes*yearsQuota
 eststo: xtreg lnMMRt1 i.year quotaXYears lnGDP , fe cluster(ccode)
 eststo: xtreg womparl quotaXYears lnGDP i.year if e(sample)==1, fe cluster(ccode)
-
 eststo: xtreg lnMMRt1 `cntrl1' i.year quotaXYears, fe cluster(ccode)
 eststo: xtreg womparl quotaXYears `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
 
-
-lab var quotaXYears "Number of Years Quota in Place"
+lab var quotaXYears "Reserved Seats $\times$ Quota Time"
 
 #delimit ;
 esttab est1 est3 est2 est4 using "$OUT/quotaDifDif-years.tex", booktabs
@@ -378,26 +470,31 @@ mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0
 title("Intensive Margin Impacts of Reserved Seats (By Quota Time)"\label{qDDtime})
 postfoot("GDP Control & Y & Y & Y & Y \\"
          "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{14.2cm}}{\begin{footnotesize} Each "
-         "regression includes country and year fixed effects and clusters "
-         "standard errors by country. A number of (small) countries do not"
-         "have a democracy score from Polity IV. Refer to table           "
-         "\ref{qDDsamp} for the estimates       "
-         "consistently using the sample where all covariates are available."
+         "\bottomrule\multicolumn{5}{p{15.0cm}}{\begin{footnotesize} We    "
+         "present estimates of the impact that the \emph{time} that a      "
+         "reserved seat quota has been in place on maternal mortality      "
+         "(columns 1-2) and women in parliament (columns 3-4). The         "
+         "independent variable of interest (the time of the quota) is equal"
+         "to zero whenever reserved seats for women are not in place in a  "
+         "country, and equal to the prevailing period of the quota when a  "
+         "reserved seat quota has been implemented.                        "
+         "Coefficients are thus interpreted as the effect of an additional "
+         "year of reserved seat quotas being in place  on rates of maternal"
+         "mortality and the percentage of women in parliament. Each        "
+         " regression includes country and year fixed effects and clusters "
+         "standard errors by country. "
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
 
-
 *-------------------------------------------------------------------------------
-*--- (4b) Infant Mortality
+*--- (5) Infant Mortality
 *-------------------------------------------------------------------------------
-eststo: xtreg lnIMFt1 i.year quotaRes lnGDP , fe cluster(ccode)
-eststo: xtreg lnIMMt1 quotaRes lnGDP i.year if e(sample)==1, fe cluster(ccode)
-
-eststo: xtreg lnIMFt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
-eststo: xtreg lnIMMt1 quotaRes `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnIMFt1 lnGDP    i.year quotaRes,                 fe cluster(ccode)
+eststo: xtreg lnIMMt1 lnGDP    i.year quotaRes if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnIMFt1 `cntrl1' i.year quotaRes,                 fe cluster(ccode)
+eststo: xtreg lnIMMt1 `cntrl1' i.year quotaRes if e(sample)==1, fe cluster(ccode)
 
 #delimit ;
 esttab est1 est3 est2 est4 using "$OUT/quotaDifDif-IM.tex", booktabs
@@ -405,39 +502,49 @@ cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
 collabels(none) label mlabels(, none) replace
-mgroups("log(Female IMR)" "log(Male IMR)", pattern(1 0 1 0)
+mgroups("ln(Female IMR)" "ln(Male IMR)", pattern(1 0 1 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("The effect of Reserved Seats on log(Infant Mortality)"\label{qDD-CR})
-postfoot("GDP Control & Y & Y & Y & Y \\"
-         "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{11.4cm}}{\begin{footnotesize} Each "
-         "regression includes country and year fixed effects and clusters "
+title("The effect of Reserved Seats on Infant Mortality"\label{qDDIM-CR})
+postfoot("GDP Control          & Y & Y & Y & Y \\"
+         "Democracy Indicators &   & Y &   & Y \\"
+         "\bottomrule\multicolumn{5}{p{11.4cm}}{\begin{footnotesize}         "
+         "Diff-in-diff estimates of the effect of reserved seats on male     "
+         "and female infant mortality are displayed.  Sex-specific mortality "
+         "data are produced by the UN Inter-agency Group for Child Mortality "
+         "Estimation (UNICEF, WHO, World Bank, UN DESA Population Division), "
+         "and are only available for 1990, 2000, 2005, 2010 and 2015.   Each "
+         "regression includes country and year fixed effects and clusters    "
          "standard errors by country."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
 
-local qVars quotaRes quotaCand
-eststo: xtreg lnIMFt1 i.year `qVars' lnGDP , fe cluster(ccode)
-eststo: xtreg lnIMMt1 `qVars' lnGDP i.year if e(sample)==1, fe cluster(ccode)
 
-eststo: xtreg lnIMFt1 `cntrl1' i.year `qVars', fe cluster(ccode)
-eststo: xtreg lnIMMt1 `qVars' `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
+local qVars quotaRes quotaCand
+eststo: xtreg lnIMFt1 lnGDP    i.year `qVars',                 fe cluster(ccode)
+eststo: xtreg lnIMMt1 lnGDP    i.year `qVars' if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnIMFt1 `cntrl1' i.year `qVars',                 fe cluster(ccode)
+eststo: xtreg lnIMMt1 `cntrl1' i.year `qVars' if e(sample)==1, fe cluster(ccode)
 
 #delimit ;
-esttab est1 est3 est2 est4 using "$OUT/quotaDifDif-IM-both.tex", booktabs
+esttab est1 est3 est2 est4 using "$OUT/quotaDifDif-IM-CR.tex", booktabs
 cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(`qVars' _cons)
 collabels(none) label mlabels(, none) replace
-mgroups("log(Female IMR)" "log(Male IMR)", pattern(1 0 1 0)
+mgroups("ln(Female IMR)" "ln(Male IMR)", pattern(1 0 1 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("The effect of Reserved Seats on log(Infant Mortality)"\label{qDD-CR})
+title("The Effect of Quotas on Infant Mortality"\label{qDDIM-CR})
 postfoot("GDP Control & Y & Y & Y & Y \\"
          "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{11.4cm}}{\begin{footnotesize} Each "
-         "regression includes country and year fixed effects and clusters "
+         "\bottomrule\multicolumn{5}{p{11.4cm}}{\begin{footnotesize}         "
+         "Diff-in-diff estimates of the effect of reserved seats on male     "
+         "and female infant mortality are displayed.  Sex-specific mortality "
+         "data are produced by the UN Inter-agency Group for Child Mortality "
+         "Estimation (UNICEF, WHO, World Bank, UN DESA Population Division), "
+         "and are only available for 1990, 2000, 2005, 2010 and 2015.   Each "
+         "regression includes country and year fixed effects and clusters    "
          "standard errors by country."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
@@ -445,10 +552,63 @@ postfoot("GDP Control & Y & Y & Y & Y \\"
 estimates clear
 
 
-exit
+*-------------------------------------------------------------------------------
+*--- (6) Placebo
+*-------------------------------------------------------------------------------
+eststo: xtreg lnmmortt1 lnGDP    i.year quotaRes,                 fe cluster(ccode)
+eststo: xtreg womparl   lnGDP    i.year quotaRes if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnmmortt1 `cntrl1' i.year quotaRes,                 fe cluster(ccode)
+eststo: xtreg womparl   `cntrl1' i.year quotaRes if e(sample)==1, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est3 using "$OUT/quotaPlacebo.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
+collabels(none) label mlabels(, none) replace
+mgroups("ln(Male Mortality) 15-49", pattern(1 0)
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+title("The Impact of Reserved Seats on Male Reproductive Age Mortality"\label{qDD})
+postfoot("GDP Control          & Y & Y   \\"
+         "Democracy Indicators &   & Y   \\"
+         "\bottomrule\multicolumn{3}{p{8.2cm}}{\begin{footnotesize} Columns "
+         "1-2 replace the logarithm of maternal mortality rates with the    "
+         "natural logarithm of male mortality in the same age group (15-49)."
+         "All other details follow those described in Table \ref{qDD1}."
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+local qvars quotaRes quotaCand 
+eststo: xtreg lnmmortt1 lnGDP    i.year `qvars',                 fe cluster(ccode)
+eststo: xtreg womparl   lnGDP    i.year `qvars' if e(sample)==1, fe cluster(ccode)
+eststo: xtreg lnmmortt1 `cntrl1' i.year `qvars',                 fe cluster(ccode)
+eststo: xtreg womparl   `cntrl1' i.year `qvars' if e(sample)==1, fe cluster(ccode)
+
+#delimit ;
+esttab est1 est3 using "$OUT/quotaPlacebo-CR.tex", booktabs
+cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(`qvars' _cons)
+collabels(none) label mlabels(, none) replace
+mgroups("ln(Male Mortality) 15-49", pattern(1 0)
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+title("The Impact of Quotas on Male Reproductive Age Mortality"\label{qDD})
+postfoot("GDP Control          & Y & Y  \\"
+         "Democracy Indicators &   & Y  \\"
+         "\bottomrule\multicolumn{3}{p{8.2cm}}{\begin{footnotesize} Columns "
+         "1-2 replace the logarithm of maternal mortality rates with the    "
+         "natural logarithm of male mortality in the same age group (15-49)."
+         "All other details follow those described in Table \ref{qDD-CR}.   "
+         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
 
 *-------------------------------------------------------------------------------
-*--- (4c) IV Regressions
+*--- (7) IV Regressions
 *-------------------------------------------------------------------------------
 local cntrl1  lnGDP i.democ
 local cntrl2  lnGDP i.democ healthExp yrs_school
@@ -524,104 +684,21 @@ postfoot("GDP Control & Y & Y \\"
 #delimit cr
 estimates clear
 
-****SIZE
-local cntrl1  lnGDP i.democ
-local cntrl1b lnGDP i.democ healthExp
-local cntrl2  lnGDP i.democ healthExp yrs_school
-replace quotaSize=0 if quotaSize==.
-gen quotaXSize=quotaRes*quotaSize
-lab var quotaXSize "Reserved Seats $\times$ Quota Size"
+*-------------------------------------------------------------------------------
+*--- (8) Mechanism
+*-------------------------------------------------------------------------------
+eststo: xtreg antenatalt1   lnGDP    i.year quotaRes, fe cluster(ccode)
+eststo: xtreg antenatalt1   `cntrl1' i.year quotaRes, fe cluster(ccode)
+eststo: xtreg birthAttendt1 lnGDP    i.year quotaRes, fe cluster(ccode)
+eststo: xtreg birthAttendt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
+eststo: xtreg healthExpt1   lnGDP    i.year quotaRes, fe cluster(ccode)
+eststo: xtreg healthExpt1   `cntrl1' i.year quotaRes, fe cluster(ccode)
+eststo: xtreg fEduct1       lnGDP    i.year quotaRes, fe cluster(ccode)
+eststo: xtreg fEduct1       `cntrl1' i.year quotaRes, fe cluster(ccode)
 
-eststo: xtreg lnMMRt1 i.year quotaXSize lnGDP , fe cluster(ccode)
-eststo: xtreg womparl quotaXSize lnGDP i.year if e(sample)==1, fe cluster(ccode)
-
-eststo: xtreg lnMMRt1 `cntrl1' i.year quotaXSize, fe cluster(ccode)
-eststo: xtreg womparl quotaXSize `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-
-eststo: xtreg lnMMRt1  quotaXSize `cntrl2' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl  quotaXSize `cntrl2' i.year if e(sample)==1, fe cluster(ccode)
-                      
-eststo: xtreg lnMMRt1  quotaXSize `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl  quotaXSize `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg lnMMRt1  quotaXSize lnGDP i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl  quotaXSize lnGDP i.year if e(sample)==1, fe cluster(ccode)
-
-sum quotaRes
-local qr = string(r(mean), "%5.3f")
-
+local ests est1 est2 est3 est4 est5 est6 est7 est8 
 #delimit ;
-esttab est1 est3 est2 est4 using "$OUT/quotaDifDif_size.tex", booktabs
-cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaXSize _cons)
-collabels(none) label mlabels(, none) replace
-mgroups("ln(Maternal Mortality Ratio)" "\% Women in Parliament", pattern(1 0 1 0)
-        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Intensive Margin Impacts of Reserved Seats (By Quota Size)"\label{qIDD})
-postfoot("GDP Control & Y & Y & Y & Y \\"
-         "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{13.9cm}}{\begin{footnotesize} The   "
-         "idependent variable of interest is equal to zero whenever        "
-         "reserved seats are not in place in a country, and equal to the   "
-         "size of the quota when a reserved seat quota is implemented.     "
-         "Coefficients are thus interpreted as the effect of an additional "
-         "1 percent of seats reserved for women on rates of maternal       "
-         "mortality and the percentage of women in parliament. Each"
-         " regression includes country and year fixed effects and clusters "
-         "standard errors by country. "
-         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
-estimates clear
-
-*-------------------------------------------------------------------------------
-*--- (5) Placebo
-*-------------------------------------------------------------------------------
-eststo: xtreg lnmmortt1 i.year quotaRes lnGDP , fe cluster(ccode)
-eststo: xtreg womparl quotaRes lnGDP i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg lnmmortt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
-eststo: xtreg womparl quotaRes `cntrl1' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg lnmmortt1 quotaRes `cntrl2' i.year if e(sample)==1, fe cluster(ccode)
-eststo: xtreg womparl quotaRes `cntrl2' i.year if e(sample)==1, fe cluster(ccode)
-
-#delimit ;
-esttab est1 est3 est2 est4 using "$OUT/quotaPlacebo.tex", booktabs
-cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
-(N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
-starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
-collabels(none) label mlabels(, none) replace
-mgroups("ln(Male Mortality) 15-49" "\% Women in Parliament", pattern(1 0 1 0)
-        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Placebo Diff-in-diffs estimates of the effect of Reserved Seats"\label{qDD})
-postfoot("GDP Control & Y & Y & Y & Y  \\"
-         "Democracy Indicators &  & Y &  & Y \\"
-         "\bottomrule\multicolumn{5}{p{13.2cm}}{\begin{footnotesize} Columns "
-         "1-3 replace the logarithm of maternal mortality rates with the log "
-         "of male mortality in the same age group (15-49). All other details "
-         "follow those described in  table \ref{qDDsamp}."
-         "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
-#delimit cr
-estimates clear
-
-*-------------------------------------------------------------------------------
-*--- (6) Mechanism
-*-------------------------------------------------------------------------------
-eststo: xtreg antenatalt1 i.year quotaRes lnGDP , fe cluster(ccode)
-eststo: xtreg antenatalt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
-
-eststo: xtreg birthAttendt1 quotaRes lnGDP i.year, fe cluster(ccode)
-eststo: xtreg birthAttendt1 quotaRes `cntrl1' i.year, fe cluster(ccode)
-
-eststo: xtreg healthExpt1 i.year quotaRes lnGDP , fe cluster(ccode)
-eststo: xtreg healthExpt1 `cntrl1' i.year quotaRes, fe cluster(ccode)
-
-eststo: xtreg fEduct1 quotaRes lnGDP i.year, fe cluster(ccode)
-eststo: xtreg fEduct1 quotaRes `cntrl1' i.year, fe cluster(ccode)
-
-
-#delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 using "$OUT/quotaMechanism.tex",
+esttab `ests' using "$OUT/quotaMechanism.tex",
 booktabs cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(quotaRes _cons)
@@ -629,30 +706,35 @@ collabels(none) label mlabels(, none) replace
 mgroups("Antenatal Care" "Attended Births" "Health Spending" "Women's Education",
         pattern(1 0 1 0 1 0 1 0) prefix(\multicolumn{@span}{c}{) suffix(}) span
         erepeat(\cmidrule(lr){@span}))
-title("Diff-in-diffs estimates of the effect of Reserved Seats on Intermediate Outcomes"\label{mDD})
+title("The Effect of Reserved Seats on Intermediate Outcomes"\label{mDD-placebo})
 postfoot("GDP Control & Y & Y & Y & Y & Y & Y & Y & Y \\"
          "Democracy Indicators & & Y & & Y & & Y & & Y \\"
-         "\bottomrule\multicolumn{9}{p{12.6cm}}{\begin{footnotesize} Antenatal"
-         "coverage and birth attendance are accessed from the World Bank     "
-         "databank."
+         "\bottomrule\multicolumn{9}{p{18.8cm}}{\begin{footnotesize} Identical"
+         "diff-in-diff models are estimated as in Table \ref{qDD1}.  Antenatal"
+         "coverage and birth attendance refer to the percentage of coverage,  "
+         "are accessed from the World Bank databank, and are only available   "
+         "for a sub-sample of years.  Health spending is measured as          "
+         "expenditure as a percent of GDP, and is produced by the World Health"
+         "Organization Global Health Expenditure database.  Women's education "
+         "is provided by \citet{BarroLee2012}. Additional data descriptions   "
+         "are available in Appendix \ref{app:Data}."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
 
 local qvars quotaRes quotaCand
-eststo: xtreg antenatalt1 i.year `qvars' lnGDP , fe cluster(ccode)
-eststo: xtreg antenatalt1 `cntrl1' i.year  `qvars', fe cluster(ccode)
-eststo: xtreg birthAttendt1 `qvars' lnGDP i.year, fe cluster(ccode)
-eststo: xtreg birthAttendt1 `qvars' `cntrl1' i.year, fe cluster(ccode)
-eststo: xtreg healthExpt1 i.year `qvars' lnGDP , fe cluster(ccode)
-eststo: xtreg healthExpt1 `cntrl1' i.year `qvars', fe cluster(ccode)
-eststo: xtreg fEduct1 `qvars' lnGDP i.year, fe cluster(ccode)
-eststo: xtreg fEduct1 `qvars' `cntrl1' i.year, fe cluster(ccode)
-
+eststo: xtreg antenatalt1    lnGDP   i.year `qvars', fe cluster(ccode)
+eststo: xtreg antenatalt1   `cntrl1' i.year `qvars', fe cluster(ccode)
+eststo: xtreg birthAttendt1  lnGDP   i.year `qvars', fe cluster(ccode)
+eststo: xtreg birthAttendt1 `cntrl1' i.year `qvars', fe cluster(ccode)
+eststo: xtreg healthExpt1    lnGDP   i.year `qvars', fe cluster(ccode)
+eststo: xtreg healthExpt1   `cntrl1' i.year `qvars', fe cluster(ccode)
+eststo: xtreg fEduct1        lnGDP   i.year `qvars', fe cluster(ccode)
+eststo: xtreg fEduct1       `cntrl1' i.year `qvars', fe cluster(ccode)
 
 #delimit ;
-esttab est1 est2 est3 est4 est5 est6 est7 est8 using "$OUT/quotaMechanism-both.tex",
+esttab `ests' using "$OUT/quotaMechanism-both.tex",
 booktabs cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N r2, fmt(%9.0g %5.3f) label(Observations R-Squared))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) keep(`qvars' _cons)
@@ -660,19 +742,26 @@ collabels(none) label mlabels(, none) replace
 mgroups("Antenatal Care" "Attended Births" "Health Spending" "Women's Education",
         pattern(1 0 1 0 1 0 1 0) prefix(\multicolumn{@span}{c}{) suffix(}) span
         erepeat(\cmidrule(lr){@span}))
-title("Diff-in-diffs estimates of the effect of Reserved Seats on Intermediate Outcomes"\label{mDD})
+title("The Effect of Quotas on Intermediate Outcomes"\label{mDDplacebo-CR})
 postfoot("GDP Control & Y & Y & Y & Y & Y & Y & Y & Y \\"
          "Democracy Indicators & & Y & & Y & & Y & & Y \\"
-         "\bottomrule\multicolumn{9}{p{12.6cm}}{\begin{footnotesize} Antenatal"
-         "coverage and birth attendance are accessed from the World Bank     "
-         "databank."
+         "\bottomrule\multicolumn{9}{p{18.8cm}}{\begin{footnotesize} Identical "
+         "diff-in-diff models are estimated as in Table \ref{qDD-CR}. Antenatal"
+         "coverage and birth attendance refer to the percentage of coverage,   "
+         "are accessed from the World Bank databank, and are only available    "
+         "for a sub-sample of years.  Health spending is measured as           "
+         "expenditure as a percent of GDP, and is produced by the World Health "
+         "Organization Global Health Expenditure database.  Women's education  "
+         "is provided by \citet{BarroLee2012}. Additional data descriptions    "
+         "are available in Appendix \ref{app:Data}."
          "* p$<$0.10; ** p$<$0.05; *** p$<$0.01."
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
 
+exit
 *-------------------------------------------------------------------------------
-*--- (7a) Event Study Women in Parliament -- Reserved Seats
+*--- (9a) Event Study Women in Parliament -- Reserved Seats
 *-------------------------------------------------------------------------------
 gen quotayearL = quotayear if quotatype=="Legislated Candidate Quota"
 replace quotayear=. if quotatype=="Legislated Candidate Quota"
@@ -737,7 +826,7 @@ graph export "$OUT/eventWomParl.eps", as(eps) replace;
 drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead*
 
 *-------------------------------------------------------------------------------
-*--- (7b) Event Study MMR -- Reserved Seats
+*--- (9b) Event Study MMR -- Reserved Seats
 *-------------------------------------------------------------------------------
 bys country: egen meanGDP = mean(lnGDP)
 
@@ -799,7 +888,7 @@ graph export "$OUT/eventlnMDeath.eps", as(eps) replace;
 
 
 *-------------------------------------------------------------------------------
-*--- (7b) Event Study MMR -- Both
+*--- (9c) Event Study MMR -- Both
 *-------------------------------------------------------------------------------
 gen quotaL   = year>=quotayearL
 
@@ -880,7 +969,7 @@ exit
     
     
 *-------------------------------------------------------------------------------
-*--- (7c) Event Study Male mortality -- Reserved Seats
+*--- (9d) Event Study Male mortality -- Reserved Seats
 *-------------------------------------------------------------------------------
 drop quota
 gen quota = year>=quotayear
@@ -938,9 +1027,10 @@ note("Year -1 is omitted as the base case.");
 graph export "$OUT/eventlnmmort.eps", as(eps) replace;
 #delimit cr
 drop time PointE UBound LBound prepost qcountry quotaLag* quotaLead*
-*/                                                   
+                                                    
+
 *-------------------------------------------------------------------------------
-*--- (8) Quota uptake
+*--- (10) Quota uptake
 *-------------------------------------------------------------------------------
 gen quotaImp = quotayear==year
 gen ODA      = dt_oda
